@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contratos Jurídicos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#0a0a0c;--surf:#111115;--surf2:#18181f;--surf3:#1e1e28;
+  --brd:#2a2a38;--brds:#1e1e2a;
+  --acc:#7c6af5;--acc2:#a89cf7;--glow:rgba(124,106,245,.18);
+  --tx:#e8e6f0;--txm:#7a788a;--txd:#4a4858;
+  --ok:#3ecf8e;--warn:#f97316;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--brd);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--acc);}
+
+header{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(10,10,12,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--brds);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:56px;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:28px;height:28px;background:linear-gradient(135deg,var(--acc),#a89cf7);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.logo-text{font-size:.95rem;font-weight:700;letter-spacing:.04em;}
+.logo-sub{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--txm);letter-spacing:.08em;}
+.hacts{display:flex;gap:8px;align-items:center;}
+
+.btn{font-family:'Syne',sans-serif;font-size:.76rem;font-weight:600;padding:7px 14px;border-radius:7px;border:none;cursor:pointer;transition:all .18s;letter-spacing:.02em;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+.btn-p{background:var(--acc);color:#fff;}
+.btn-p:hover{background:#8f7ef8;box-shadow:0 0 16px var(--glow);transform:translateY(-1px);}
+.btn-g{background:var(--surf2);color:var(--txm);border:1px solid var(--brd);}
+.btn-g:hover{background:var(--surf3);color:var(--tx);border-color:var(--acc);}
+.btn-d{background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.2);}
+.btn-d:hover{background:rgba(239,68,68,.22);}
+.btn-sm{padding:5px 10px;font-size:.72rem;}
+
+.app{margin-top:56px;padding:1.5rem;display:flex;flex-direction:column;height:calc(100vh - 56px);overflow:hidden;}
+
+/* STATS */
+.stats{display:flex;gap:10px;margin-bottom:1.2rem;flex-shrink:0;flex-wrap:wrap;}
+.sc{background:var(--surf);border:1px solid var(--brds);border-radius:11px;padding:12px 16px;position:relative;overflow:hidden;cursor:pointer;transition:border-color .18s,box-shadow .18s,transform .18s;min-width:120px;flex:1;user-select:none;}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--sc-color,var(--acc));opacity:.7;}
+.sc:hover{border-color:var(--sc-color,var(--acc));transform:translateY(-2px);}
+.sc.active{border-color:var(--sc-color,var(--acc));box-shadow:0 0 0 2px var(--sc-color,var(--acc));}
+.sc-lbl{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txm);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;}
+.sc-val{font-size:1.7rem;font-weight:800;line-height:1;color:var(--tx);}
+.sc-sub{font-size:.66rem;color:var(--txm);margin-top:4px;}
+.sc-hint{position:absolute;top:7px;right:9px;font-size:.55rem;color:var(--txd);opacity:0;transition:opacity .2s;}
+.sc:hover .sc-hint{opacity:1;}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:1rem;flex-shrink:0;flex-wrap:wrap;}
+.sw{position:relative;flex:1;min-width:160px;}
+.si-ic{color:var(--txd);position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none;}
+.search{width:100%;background:var(--surf);border:1px solid var(--brd);border-radius:9px;padding:8px 12px 8px 34px;color:var(--tx);font-family:'DM Mono',monospace;font-size:.8rem;transition:border-color .2s,box-shadow .2s;}
+.search:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--glow);}
+.search::placeholder{color:var(--txd);}
+.fsel{background:var(--surf);border:1px solid var(--brd);border-radius:9px;padding:8px 12px;color:var(--tx);font-family:'Syne',sans-serif;font-size:.76rem;cursor:pointer;}
+.fsel:focus{outline:none;border-color:var(--acc);}
+.fsel option{background:var(--surf2);}
+.cbtn{background:none;border:1px solid var(--brd);border-radius:7px;color:var(--txd);padding:6px 11px;cursor:pointer;font-size:.74rem;font-family:'Syne',sans-serif;transition:all .18s;display:none;align-items:center;gap:4px;}
+.cbtn.show{display:flex;}
+.cbtn:hover{color:var(--tx);border-color:var(--acc);}
+
+/* TABLE */
+.tbl-wrap{background:var(--surf);border:1px solid var(--brds);border-radius:13px;overflow:hidden;display:flex;flex-direction:column;flex:1;min-height:0;}
+.tbl-top{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-bottom:1px solid var(--brds);background:var(--surf);flex-shrink:0;}
+.tbl-title{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--txm);letter-spacing:.08em;text-transform:uppercase;}
+.tbl-cnt{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--txd);}
+.tbl-scroll{overflow:auto;flex:1;position:relative;}
+
+table{width:100%;border-collapse:collapse;table-layout:auto;}
+.new-row-wrap{flex-shrink:0;overflow-x:auto;}
+.new-row-wrap table{width:100%;table-layout:fixed;}
+
+thead th{font-family:'DM Mono',monospace;font-size:.63rem;font-weight:500;color:var(--txd);letter-spacing:.1em;text-transform:uppercase;padding:9px 10px;text-align:left;border-bottom:1px solid var(--brds);background:var(--surf);cursor:pointer;user-select:none;white-space:nowrap;position:sticky;top:0;z-index:5;overflow:hidden;transition:color .2s;}
+thead th:hover{color:var(--acc2);}
+.th-in{display:flex;align-items:center;gap:4px;}
+.sind{opacity:.5;font-size:.7rem;}
+.rh{position:absolute;right:0;top:0;bottom:0;width:5px;cursor:col-resize;background:transparent;transition:background .15s;z-index:6;}
+.rh:hover,.rh.on{background:var(--acc);}
+thead th{position:sticky;top:0;}
+
+tbody tr{border-bottom:1px solid var(--brds);transition:background .12s;}
+tbody tr:hover{background:var(--surf2);}
+tbody tr:last-child{border-bottom:none;}
+td{padding:7px 10px;font-size:.81rem;color:var(--tx);overflow:hidden;}
+
+/* NEW ROW - FIXED ABOVE TABLE */
+.new-row-fixed-wrap{background:var(--surf);border:1px solid var(--brds);border-radius:11px;margin-bottom:10px;padding:6px 0;flex-shrink:0;}
+.new-row-fixed-wrap:hover{background:rgba(124,106,245,.07);}
+.new-row-fixed-wrap table{width:100%;table-layout:auto;}
+.new-row-fixed-wrap td{padding:6px 10px;vertical-align:middle;}
+.new-row-fixed-wrap .new-inp{width:100%;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--tx);font-family:'Syne',sans-serif;font-size:.8rem;padding:3px 4px;border-radius:4px;transition:border-color .15s,background .15s;box-sizing:border-box;}
+.new-row-fixed-wrap .new-inp:focus{outline:none;border-bottom-color:var(--acc);background:rgba(124,106,245,.08);}
+.new-row-fixed-wrap .new-inp::placeholder{color:var(--txd);font-size:.75rem;}
+.new-row-fixed-wrap .new-sel{width:100%;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--tx);font-family:'Syne',sans-serif;font-size:.78rem;padding:3px 2px;cursor:pointer;border-radius:4px;box-sizing:border-box;}
+.new-row-fixed-wrap .new-sel:focus{outline:none;border-bottom-color:var(--acc);background:rgba(124,106,245,.08);}
+.new-row-fixed-wrap .new-sel option{background:var(--surf2);}
+.new-row-fixed-wrap .new-add-btn{background:var(--acc);border:none;color:#fff;border-radius:6px;padding:5px 12px;cursor:pointer;font-family:'Syne',sans-serif;font-size:.74rem;font-weight:600;transition:all .18s;white-space:nowrap;}
+.new-row-fixed-wrap .new-add-btn:hover{background:#8f7ef8;transform:translateY(-1px);}
+.new-row-hint{font-family:'DM Mono',monospace;font-size:.6rem;color:rgba(124,106,245,.5);letter-spacing:.06em;white-space:nowrap;}
+
+/* CELLS */
+th{white-space:nowrap;}
+.c-nome{cursor:default;overflow:hidden;}
+.nome-t{display:block;font-weight:600;font-size:.84rem;word-break:break-word;line-height:1.35;}
+.c-cpf{font-family:'DM Mono',monospace;font-size:.74rem;color:var(--txm);white-space:nowrap;}
+.c-acao{white-space:nowrap;}
+.etbdg{max-width:none;}
+.c-click{cursor:pointer;position:relative;}
+.c-click:hover{background:rgba(124,106,245,.07);}
+.ehint{position:absolute;top:3px;right:4px;font-size:.55rem;opacity:0;color:var(--acc2);transition:opacity .15s;pointer-events:none;}
+.c-click:hover .ehint{opacity:1;}
+.c-data,.c-dpp{font-family:'DM Mono',monospace;font-size:.72rem;white-space:nowrap;color:var(--txm);}
+.c-atu{white-space:nowrap;}
+.atu-w{display:flex;align-items:center;gap:5px;}
+.atu-t{font-family:'DM Mono',monospace;font-size:.71rem;color:var(--txm);}
+.rfbtn{background:none;border:none;cursor:pointer;color:var(--txd);font-size:.82rem;padding:2px 4px;border-radius:4px;transition:all .18s;display:inline-flex;}
+.rfbtn:hover{color:var(--acc2);background:var(--glow);transform:rotate(180deg);}
+.c-obs{white-space:pre-wrap;word-break:break-word;font-size:.78rem;color:var(--txm);line-height:1.48;cursor:pointer;border-radius:5px;transition:background .14s;}
+.c-obs:hover{background:rgba(124,106,245,.07);color:var(--tx);}
+.c-act{white-space:nowrap;}
+.racts{display:flex;gap:4px;}
+.rbtn{background:none;border:none;cursor:pointer;color:var(--txd);padding:4px;border-radius:5px;transition:all .14s;font-size:.85rem;}
+.rbtn:hover{background:var(--surf3);}
+.rbtn.ed:hover{color:var(--acc2);}
+.rbtn.dl:hover{color:#ef4444;}
+
+/* BADGES */
+.bdg{display:inline-flex;align-items:center;padding:3px 8px;border-radius:5px;font-size:.67rem;font-weight:600;letter-spacing:.03em;white-space:nowrap;}
+.b-ok{background:rgba(62,207,142,.12);color:var(--ok);border:1px solid rgba(62,207,142,.2);}
+.b-pend{background:rgba(249,115,22,.12);color:var(--warn);border:1px solid rgba(249,115,22,.2);}
+.pbdg{font-family:'DM Mono',monospace;font-size:.63rem;color:#fbbf24;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2);padding:2px 7px;border-radius:4px;white-space:nowrap;}
+.abadge{display:inline-block;padding:3px 8px;border-radius:5px;font-size:.64rem;font-weight:700;letter-spacing:.03em;white-space:nowrap;}
+.ac-jud{background:rgba(124,106,245,.12);color:#a89cf7;border:1px solid rgba(124,106,245,.22);}
+.ac-exe{background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.22);}
+.ac-ben{background:rgba(6,182,212,.12);color:#22d3ee;border:1px solid rgba(6,182,212,.22);}
+.ac-sal{background:rgba(167,139,250,.12);color:#c4b5fd;border:1px solid rgba(167,139,250,.22);}
+.ac-bpc{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.22);}
+.ac-trb{background:rgba(236,72,153,.12);color:#f472b6;border:1px solid rgba(236,72,153,.22);}
+.ac-ali{background:rgba(132,204,22,.12);color:#a3e635;border:1px solid rgba(132,204,22,.22);}
+.ac-reg{background:rgba(249,115,22,.12);color:#fb923c;border:1px solid rgba(249,115,22,.22);}
+.etbdg{display:inline-block;padding:2px 8px;border-radius:5px;font-size:.7rem;font-weight:600;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
+
+/* INLINE DROPDOWN */
+.idrop{position:fixed;z-index:1000;background:#1a1a24;border:1px solid var(--acc);border-radius:9px;min-width:240px;box-shadow:0 8px 32px rgba(0,0,0,.6);overflow-y:auto;max-height:340px;}
+@keyframes ddin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.idrop{animation:ddin .14s ease;}
+.iopt{padding:8px 14px;font-size:.74rem;cursor:pointer;font-family:'Syne',sans-serif;color:var(--tx);transition:background .12s;display:flex;align-items:center;gap:8px;white-space:normal;line-height:1.3;word-wrap:break-word;}
+.iopt span:first-child{flex:1;}
+.iopt:hover{background:rgba(124,106,245,.12);color:var(--acc2);}
+.iopt.sel{background:rgba(124,106,245,.1);}
+.iopt.sel::after{content:' ✓';color:var(--acc2);margin-left:auto;font-size:.7rem;}
+.iopt-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--txd);}
+.empty-icon{font-size:2rem;margin-bottom:10px;opacity:.4;}
+.empty-text{font-size:.82rem;}
+
+/* MODALS */
+.ov{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:1rem;}
+.ov.open{display:flex;}
+.modal{background:var(--surf);border:1px solid var(--brd);border-radius:16px;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.65);animation:modin .22s cubic-bezier(.34,1.56,.64,1);}
+.modal-sm{max-width:460px;}
+@keyframes modin{from{opacity:0;transform:scale(.93) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.mh{padding:18px 22px 13px;border-bottom:1px solid var(--brds);display:flex;align-items:center;justify-content:space-between;}
+.mt{font-size:.98rem;font-weight:700;}
+.mc{background:var(--surf2);border:1px solid var(--brd);color:var(--txm);border-radius:7px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .18s;}
+.mc:hover{background:var(--surf3);color:var(--tx);}
+.mb{padding:18px 22px;}
+.mf{padding:13px 22px;border-top:1px solid var(--brds);display:flex;gap:10px;justify-content:flex-end;}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fg1{grid-column:1/-1;}
+.fl{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--txm);letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:5px;}
+.fi,.fs,.fta{background:var(--surf2);border:1px solid var(--brd);border-radius:7px;padding:9px 11px;color:var(--tx);font-family:'Syne',sans-serif;font-size:.8rem;width:100%;transition:border-color .2s,box-shadow .2s;}
+.fi:focus,.fs:focus,.fta:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--glow);}
+.fs option{background:var(--surf2);}
+.fta{resize:vertical;min-height:80px;}
+.fgrp{display:flex;flex-direction:column;}
+
+/* COLOR PICKER PANEL */
+.color-panel{background:var(--surf2);border:1px solid var(--brd);border-radius:10px;padding:14px;margin-top:8px;display:none;flex-direction:column;gap:10px;}
+.color-panel.open{display:flex;}
+.color-row{display:flex;align-items:center;gap:10px;}
+.color-swatch{width:36px;height:36px;border-radius:7px;border:2px solid rgba(255,255,255,.15);flex-shrink:0;cursor:pointer;transition:transform .15s;}
+.color-swatch:hover{transform:scale(1.1);}
+.hex-input{font-family:'DM Mono',monospace;font-size:.82rem;background:var(--surf3);border:1px solid var(--brd);border-radius:7px;padding:7px 10px;color:var(--tx);width:110px;letter-spacing:.05em;}
+.hex-input:focus{outline:none;border-color:var(--acc);}
+.native-picker{position:absolute;opacity:0;width:0;height:0;pointer-events:none;}
+.color-actions{display:flex;gap:8px;}
+
+/* MANAGE OPTIONS */
+.opt-col-sel{font-family:'Syne',sans-serif;font-size:.78rem;background:var(--surf2);border:1px solid var(--brd);border-radius:8px;padding:7px 10px;color:var(--tx);cursor:pointer;margin-bottom:12px;width:100%;}
+.opt-col-sel:focus{outline:none;border-color:var(--acc);}
+.opt-list{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;max-height:260px;overflow-y:auto;padding-right:4px;}
+.opt-row{display:flex;align-items:center;gap:8px;background:var(--surf2);border-radius:8px;padding:7px 10px;border:1px solid var(--brds);transition:border-color .15s;}
+.opt-row:hover{border-color:var(--brd);}
+.opt-dot{width:22px;height:22px;border-radius:6px;flex-shrink:0;cursor:pointer;border:2px solid rgba(255,255,255,.12);transition:transform .15s,box-shadow .15s;}
+.opt-dot:hover{transform:scale(1.12);box-shadow:0 0 0 2px var(--acc);}
+.opt-dot.active{box-shadow:0 0 0 2px var(--acc);}
+.opt-name{flex:1;font-size:.82rem;color:var(--tx);}
+.opt-del{background:none;border:none;cursor:pointer;color:var(--txd);font-size:.85rem;padding:3px 5px;border-radius:4px;transition:all .14s;}
+.opt-del:hover{color:#ef4444;background:rgba(239,68,68,.1);}
+.add-opt-row{display:flex;gap:8px;align-items:center;}
+.add-opt-name{flex:1;background:var(--surf2);border:1px solid var(--brd);border-radius:7px;padding:8px 11px;color:var(--tx);font-family:'Syne',sans-serif;font-size:.8rem;}
+.add-opt-name:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--glow);}
+.add-opt-dot{width:36px;height:36px;border-radius:7px;flex-shrink:0;cursor:pointer;border:2px solid rgba(255,255,255,.15);transition:transform .15s;}
+.add-opt-dot:hover{transform:scale(1.08);}
+
+.inline-color-editor{background:var(--surf3);border:1px solid var(--acc);border-radius:9px;padding:12px;margin-top:4px;display:flex;flex-direction:column;gap:10px;}
+.float-color-editor{background:var(--surf3);border:1px solid var(--acc);border-radius:9px;padding:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);min-width:220px;}
+.ice-row{display:flex;align-items:center;gap:10px;}
+.ice-swatch{width:36px;height:36px;border-radius:7px;border:2px solid rgba(255,255,255,.2);flex-shrink:0;cursor:pointer;}
+.ice-hex{font-family:'DM Mono',monospace;font-size:.82rem;background:var(--surf2);border:1px solid var(--brd);border-radius:7px;padding:7px 10px;color:var(--tx);width:110px;letter-spacing:.05em;}
+.ice-hex:focus{outline:none;border-color:var(--acc);}
+.ice-actions{display:flex;gap:8px;}
+
+/* DETAIL */
+.ds{margin-bottom:16px;}
+.dst{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--txd);letter-spacing:.12em;text-transform:uppercase;margin-bottom:9px;padding-bottom:5px;border-bottom:1px solid var(--brds);}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.di{background:var(--surf2);border-radius:7px;padding:9px 12px;}
+.di.full{grid-column:1/-1;}
+.dil{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--txd);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
+.dv{font-size:.83rem;font-weight:600;color:var(--tx);word-break:break-word;}
+
+/* CONFIRM */
+.cfm{background:var(--surf);border:1px solid rgba(239,68,68,.3);border-radius:13px;padding:22px;width:100%;max-width:360px;text-align:center;animation:modin .2s ease;}
+.cfm-i{font-size:2rem;margin-bottom:10px;}
+.cfm-t{font-size:.98rem;font-weight:700;margin-bottom:7px;}
+.cfm-s{font-size:.8rem;color:var(--txm);margin-bottom:18px;}
+.cfm-a{display:flex;gap:10px;justify-content:center;}
+
+/* OBS */
+.obs-modal{max-width:480px;}
+
+/* TOAST */
+.toasts{position:fixed;bottom:20px;right:20px;z-index:400;display:flex;flex-direction:column;gap:7px;}
+.toast{background:var(--surf2);border:1px solid var(--brd);border-radius:9px;padding:10px 16px;font-size:.8rem;display:flex;align-items:center;gap:7px;animation:tin .25s cubic-bezier(.34,1.56,.64,1);box-shadow:0 8px 28px rgba(0,0,0,.4);transition:opacity .4s;}
+@keyframes tin{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+.t-ok{border-color:rgba(62,207,142,.3);}
+.t-ok .td{color:var(--ok);}
+.t-err{border-color:rgba(239,68,68,.3);}
+.t-err .td{color:#ef4444;}
+
+#fi{display:none;}
+.hidden-native{position:absolute;width:0;height:0;opacity:0;pointer-events:none;}
+
+/* LOGIN */
+.login-screen{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;}
+.login-screen.hidden{display:none;}
+.login-box{background:var(--surf);border:1px solid var(--brd);border-radius:16px;padding:32px 36px;width:100%;max-width:360px;box-shadow:0 24px 80px rgba(0,0,0,.65);}
+.login-icon{width:48px;height:48px;margin:0 auto 16px;background:linear-gradient(135deg,var(--acc),#a89cf7);border-radius=12px;display:flex;align-items:center;justify-content:center;font-size:22px;}
+.login-title{text-align:center;font-size:1.1rem;font-weight:700;margin-bottom:4px;}
+.login-sub{text-align:center;font-family:'DM Mono',monospace;font-size:.62rem;color:var(--txm);letter-spacing:.08em;margin-bottom:24px;}
+.login-err{text-align:center;font-size:.78rem;color:#ef4444;margin-bottom:12px;display:none;}
+.login-label{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--txm);letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:5px;}
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="LOGIN_SCREEN">
+  <div class="login-box">
+    <div class="login-icon">⚖️</div>
+    <div class="login-title">CONTRATOS</div>
+    <div class="login-sub">GESTÃO JURÍDICA</div>
+    <div class="login-err" id="LOGIN_ERR">Login ou senha incorretos</div>
+    <label class="login-label">Usuário</label>
+    <input class="fi" style="margin-bottom:16px" id="LOGIN_USER" placeholder="Digite seu usuário" onkeydown="if(event.key==='Enter')doLogin()">
+    <label class="login-label">Senha</label>
+    <input class="fi" type="password" id="LOGIN_PASS" placeholder="Digite sua senha" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:20px" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚖️</div>
+    <div>
+      <div class="logo-text">CONTRATOS</div>
+      <div class="logo-sub">GESTÃO JURÍDICA</div>
+    </div>
+  </div>
+  <div class="hacts">
+    <button class="btn btn-g" onclick="openManageOpts()">⚙️ Opções</button>
+    <button class="btn btn-g" onclick="document.getElementById('fi').click()">📂 Importar</button>
+    <button class="btn btn-g" onclick="doCSV()">⬇ CSV</button>
+    <button class="btn btn-g" onclick="doXLSX()">⬇ XLSX</button>
+  </div>
+</header>
+<input type="file" id="fi" accept=".xlsx,.xls,.csv" onchange="doImport(event)">
+<!-- hidden native color pickers -->
+<input type="color" id="NCP" class="hidden-native" oninput="onNativeColorInput(this.value)" onchange="onNativeColorInput(this.value)">
+<input type="color" id="ANCP" class="hidden-native" oninput="onAddColorInput(this.value)" onchange="onAddColorInput(this.value)">
+
+<div class="app">
+  <div class="stats" id="SG"></div>
+  <div class="toolbar">
+    <div class="sw">
+      <span class="si-ic">🔍</span>
+      <input type="text" class="search" id="SI" placeholder="Buscar nome, CPF, OBS..." oninput="applyFilter()">
+    </div>
+    <select class="fsel" id="FA" onchange="applyFilter()"><option value="">Todas as ações</option></select>
+    <select class="fsel" id="FE" onchange="applyFilter()"><option value="">Todas as etapas</option></select>
+    <select class="fsel" id="FP" onchange="applyFilter()">
+      <option value="">Qualquer pendência</option>
+      <option value="OK">✅ OK</option>
+      <option value="Pendente">⚠️ Pendente</option>
+    </select>
+    <button class="cbtn" id="CB" onclick="clearAll()">✕ Limpar</button>
+  </div>
+  <div class="new-row-fixed-wrap" id="NR_FIXED"></div>
+  <div class="tbl-wrap">
+    <div class="tbl-top">
+      <span class="tbl-title">LISTA DE CONTRATOS</span>
+      <span class="tbl-cnt" id="TC"></span>
+    </div>
+    <div class="tbl-scroll" id="TS">
+      <table id="TBL">
+        <colgroup id="CG"></colgroup>
+        <thead id="TH"></thead>
+        <tbody id="TB"></tbody>
+      </table>
+      <div class="empty" id="EM" style="display:none"><div class="empty-icon">📋</div><div class="empty-text">Nenhum contrato encontrado</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL (full row edit) -->
+<div class="ov" id="MO" onclick="if(event.target===this)closeM()">
+  <div class="modal">
+    <div class="mh"><span class="mt" id="ML">Editar Contrato</span><button class="mc" onclick="closeM()">✕</button></div>
+    <div class="mb">
+      <div class="fg">
+        <div class="fgrp fg1"><label class="fl">Nome Completo</label><input type="text" class="fi" id="fn" placeholder="Nome do cliente"></div>
+        <div class="fgrp"><label class="fl">CPF</label><input type="text" class="fi" id="fc" placeholder="000.000.000-00" oninput="onCPFInput(this)"></div>
+        <div class="fgrp"><label class="fl">Ação</label>
+          <select class="fs" id="fa">
+            <option value="">Selecione...</option>
+            <option>JUDICIAL</option><option>BENEFICIO POR INCAPACIDADE</option><option>EXECUÇÃO</option>
+            <option>SALARIO MATERNIDADE</option><option>BPC LOAS</option><option>TRABALHISTA</option>
+            <option>ALIMENTOS</option><option>SALARIO MATERNIDADE PRORROG</option><option>REGULAMENTAÇÃO DE VISITAS</option>
+          </select>
+        </div>
+        <div class="fgrp"><label class="fl">Data</label><input type="date" class="fi" id="fd"></div>
+        <div class="fgrp"><label class="fl">Etapa</label><select class="fs" id="fe"></select></div>
+        <div class="fgrp"><label class="fl">DPP ou DN</label><input type="date" class="fi" id="fdn"></div>
+        <div class="fgrp"><label class="fl">Tráfego</label>
+          <select class="fs" id="ft"><option value="">Selecione...</option><option>Organico</option><option>Trafego Pago</option></select>
+        </div>
+        <div class="fgrp"><label class="fl">Pendência</label>
+          <select class="fs" id="fp"><option value="">Selecione...</option><option>OK</option><option>Pendente</option></select>
+        </div>
+        <div class="fgrp"><label class="fl">Parcela</label>
+          <select class="fs" id="fpc"><option value=""></option>
+            <option>Recebeu Parcela 1</option><option>Recebeu Parcela 2</option><option>Recebeu Parcela 3</option>
+            <option>Recebeu Parcela 4</option><option>Recebeu Parcela 5</option><option>Recebeu Parcela 6</option>
+          </select>
+        </div>
+        <div class="fgrp fg1"><label class="fl">Observações</label><textarea class="fta" id="fo" placeholder="Anotações, número de processo..."></textarea></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-g" onclick="closeM()">Cancelar</button>
+      <button class="btn btn-p" onclick="saveC()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL -->
+<div class="ov" id="DO" onclick="if(event.target===this)closeDet()">
+  <div class="modal">
+    <div class="mh"><span class="mt" id="DT">Detalhes</span><button class="mc" onclick="closeDet()">✕</button></div>
+    <div class="mb" id="DB"></div>
+    <div class="mf">
+      <button class="btn btn-d" id="DDB">🗑 Excluir</button>
+      <button class="btn btn-g" onclick="closeDet()">Fechar</button>
+      <button class="btn btn-p" id="DEB">✏️ Editar</button>
+    </div>
+  </div>
+</div>
+
+<!-- OBS -->
+<div class="ov" id="OO" onclick="if(event.target===this)closeObs()">
+  <div class="modal obs-modal">
+    <div class="mh"><span class="mt">Observações</span><button class="mc" onclick="closeObs()">✕</button></div>
+    <div class="mb">
+      <label class="fl" id="OL"></label>
+      <textarea class="fta" id="OT" style="min-height:150px"></textarea>
+    </div>
+    <div class="mf">
+      <button class="btn btn-g" onclick="closeObs()">Cancelar</button>
+      <button class="btn btn-p" onclick="saveObs()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGE OPTIONS -->
+<div class="ov" id="MOP" onclick="if(event.target===this)closeMOP()">
+  <div class="modal modal-sm">
+    <div class="mh"><span class="mt">⚙️ Gerenciar Opções</span><button class="mc" onclick="closeMOP()">✕</button></div>
+    <div class="mb">
+      <label class="fl" style="margin-bottom:6px">Coluna</label>
+      <select class="opt-col-sel" id="OPCOL" onchange="renderOptList()">
+        <option value="acao">Ação</option>
+        <option value="etapas">Etapas</option>
+      </select>
+      <div class="opt-list" id="OPTL"></div>
+      <!-- Add new option -->
+      <div style="margin-bottom:6px"><label class="fl">Nova Opção</label></div>
+      <div class="add-opt-row">
+        <input type="text" class="add-opt-name" id="OPTN" placeholder="Nome da opção...">
+        <div class="add-opt-dot" id="ADOT" style="background:#7c6af5" onclick="openAddColorPicker()" title="Escolher cor"></div>
+        <button class="btn btn-p btn-sm" onclick="addOpt()">+ Add</button>
+      </div>
+      <!-- Add color picker panel -->
+      <div class="inline-color-editor" id="ACEP" style="display:none;margin-top:10px;">
+        <div class="ice-row">
+          <div class="ice-swatch" id="ACES" onclick="document.getElementById('ANCP').click()"></div>
+          <input type="text" class="ice-hex" id="ACEH" maxlength="7" placeholder="#rrggbb" oninput="onAddHexInput(this.value)">
+        </div>
+        <div class="ice-actions">
+          <button class="btn btn-p btn-sm" onclick="confirmAddColor()">Salvar cor</button>
+          <button class="btn btn-g btn-sm" onclick="cancelAddColor()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-g" onclick="closeMOP()">Fechar</button>
+      <button class="btn btn-p" onclick="saveOptsAndClose()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="ov" id="CO">
+  <div class="cfm">
+    <div class="cfm-i">⚠️</div>
+    <div class="cfm-t">Excluir Contrato?</div>
+    <div class="cfm-s" id="CFS"></div>
+    <div class="cfm-a">
+      <button class="btn btn-g" onclick="closeCfm()">Cancelar</button>
+      <button class="btn btn-d" id="CFB">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="TOASTS"></div>
+<div id="FLOAT_EDITOR" style="position:fixed;z-index:1001;display:none;"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════════════
+const SUPABASE_URL = 'https://oeurtiyeivcqjhqsgtaa.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ldXJ0aXllaXZjcWpocXNndGFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MTg0NTgsImV4cCI6MjA5MDk5NDQ1OH0.DoohZpxS2SA0JqHRCBpBTH8FxZFIN2VXBBDDz5MnB4M';
+let sb;
+let currentUser=null;
+
+function initSB(){
+  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+}
+
+function normEmail(u){
+  if(!u)return u;
+  if(u.indexOf('@')>=0)return u;
+  return u+'@cerijus.com';
+}
+
+async function doLogin(){
+  var u=document.getElementById('LOGIN_USER').value.trim();
+  var p=document.getElementById('LOGIN_PASS').value;
+  var errEl=document.getElementById('LOGIN_ERR');
+  if(!u||!p){errEl.textContent='Preencha todos os campos';errEl.style.display='block';return;}
+  var email=normEmail(u);
+  errEl.style.display='none';
+  try{
+    var result=await sb.auth.signInWithPassword({email:email,password:p});
+    if(result.error)throw result.error;
+    currentUser=result.data.user;
+    sessionStorage.setItem('cj_auth','1');
+    document.getElementById('LOGIN_SCREEN').classList.add('hidden');
+    loadAll();
+  }catch(e){
+    errEl.textContent='Erro: '+e.message;
+    errEl.style.display='block';
+  }
+}
+
+function checkAuth(){
+  if(sessionStorage.getItem('cj_auth')){
+    document.getElementById('LOGIN_SCREEN').classList.add('hidden');
+  }
+  document.getElementById('LOGIN_USER').focus();
+}
+
+// ═══════════════════════════════════════════════
+// OPTIONS & COLORS
+// ═══════════════════════════════════════════════
+const DEF_ET=[
+  {v:'Emitir Guia SM',c:'#ffcfc9'},{v:'Aguardando Pagamento de Guia',c:'#ffc8aa'},
+  {v:'Guia Paga',c:'#bfe1f6'},{v:'Aguardando Doc para Protocolar',c:'#753800'},
+  {v:'Aguardando Protocolar Analita',c:'#b10202'},{v:'Aguardando Pericia Médica INSS',c:'#ac7410'},
+  {v:'Benefício em Análise Adm',c:'#ffe5a0'},{v:'Benefício Aprovado/Aguard pagamento',c:'#0a53a8'},
+  {v:'Beneficio Indeferido',c:'#b10202'},{v:'Análise Recurso',c:'#ffe5a0'},
+  {v:'Recurso Aprovado/Aguard Pagamento',c:'#0a53a8'},{v:'Aguardando Doc para Judicializar',c:'#753800'},
+  {v:'Aguardando Judicializar Analita',c:'#b10202'},{v:'Aguardando Pericia Federal',c:'#ac7410'},
+  {v:'Judicial Aprovado - Aguard Pagamento',c:'#0a53a8'},{v:'Recebendo Parcelas',c:'#11734b'},
+  {v:'Finalizado',c:'#11734b'},{v:'Execução',c:'#b10202'},{v:'JUDICIAL',c:'#e8eaed'},
+];
+const DEF_AC=[
+  {v:'JUDICIAL',c:'#a89cf7'},{v:'BENEFICIO POR INCAPACIDADE',c:'#22d3ee'},
+  {v:'EXECUÇÃO',c:'#60a5fa'},{v:'SALARIO MATERNIDADE',c:'#c4b5fd'},
+  {v:'BPC LOAS',c:'#fbbf24'},{v:'TRABALHISTA',c:'#f472b6'},
+  {v:'ALIMENTOS',c:'#a3e635'},{v:'SALARIO MATERNIDADE PRORROG',c:'#d8b4fe'},
+  {v:'REGULAMENTAÇÃO DE VISITAS',c:'#fb923c'},
+];
+
+function loadOpts(k,d){ return JSON.parse(localStorage.getItem('cj_op_'+k)||'null')||d.map(o=>({...o})); }
+function saveOpts(k,a){ localStorage.setItem('cj_op_'+k,JSON.stringify(a)); }
+
+let ET_OPTS=loadOpts('et',DEF_ET);
+let AC_OPTS=loadOpts('ac',DEF_AC);
+
+function getOpts(col){ return col==='etapas'?ET_OPTS:AC_OPTS; }
+function setOpts(col,a){ if(col==='etapas'){ET_OPTS=a;saveOpts('et',a);}else{AC_OPTS=a;saveOpts('ac',a);} }
+
+function etapaStyle(v){
+  const o=ET_OPTS.find(x=>x.v===v); if(!o)return '';
+  const h=o.c,r=parseInt(h.slice(1,3),16)||128,g=parseInt(h.slice(3,5),16)||128,b=parseInt(h.slice(5,7),16)||128;
+  return `color:${h};background:rgba(${r},${g},${b},.14);border:1px solid rgba(${r},${g},${b},.28);`;
+}
+function acaoClass(a){
+  const u=(a||'').toUpperCase();
+  if(u.includes('JUDICIAL')&&!u.includes('BENEFICIO'))return 'ac-jud';
+  if(u.includes('EXECU'))return 'ac-exe';
+  if(u.includes('INCAPACIDADE'))return 'ac-ben';
+  if(u.includes('MATERNIDADE'))return 'ac-sal';
+  if(u.includes('BPC')||u.includes('LOAS'))return 'ac-bpc';
+  if(u.includes('TRABALHISTA'))return 'ac-trb';
+  if(u.includes('ALIMENTOS'))return 'ac-ali';
+  return 'ac-reg';
+}
+function acaoStyle(a){
+  const u=(a||'').toUpperCase();
+  const o=AC_OPTS.find(x=>u===x.v.toUpperCase());
+  if(!o)return '';
+  const h=o.c,r=parseInt(h.slice(1,3),16)||128,g=parseInt(h.slice(3,5),16)||128,b=parseInt(h.slice(5,7),16)||128;
+  return `color:${h};background:rgba(${r},${g},${b},.12);border:1px solid rgba(${r},${g},${b},.22);`;
+}
+
+// ═══════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════
+const RAW=[{"nome":"JOÃO GRANADO","cpf":"051.260.698-61","acao":"JUDICIAL","data":"2025-04-16","etapas":"JUDICIAL","atualizacao":"2026-03-14T09:29:26","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"Audiencia 01/04"},{"nome":"ALESSANDRA RODRIGUES PEREIRA MUNIZ","cpf":"217.315.968-20","acao":"BENEFICIO POR INCAPACIDADE","data":"2025-04-17","etapas":"JUDICIAL","atualizacao":"2026-03-08T20:23:11","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"5000655-70.2026.4.03.6331"},{"nome":"DARA FERNANDA CRISTINA ROCHA","cpf":"439.252.208-36","acao":"BENEFICIO POR INCAPACIDADE","data":"2025-05-08","etapas":"JUDICIAL","atualizacao":"2026-03-06T16:12:16","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"Indeferimento em 30/09 - Ultima msg 08/11 - 5002082-84.2025.4.03.6316"},{"nome":"LEANDRO DIAS PEREIRA","cpf":"460.583.938-09","acao":"EXECUÇÃO","data":"2025-06-14","etapas":"Execução","atualizacao":"2026-02-12T17:11:41","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"JULIANA FERREIRA DOS SANTOS","cpf":"463.461.518-51","acao":"BENEFICIO POR INCAPACIDADE","data":"2025-07-29","etapas":"JUDICIAL","atualizacao":"2026-03-06T16:12:18","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"5000916-35.2026.4.03.6331"},{"nome":"NILTON CEZAR BOTELHO","cpf":"095.532.048-80","acao":"JUDICIAL","data":"2025-07-29","etapas":"JUDICIAL","atualizacao":"2026-03-08T20:23:45","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"PAMELA CRISTINA DA SILVA","cpf":"461.403.008-43","acao":"SALARIO MATERNIDADE","data":"2025-08-06","etapas":"Benefício Aprovado/Aguard pagamento","atualizacao":"2026-03-14T08:08:32","dpp_dn":"2026-02-23","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"Protocolado pelo Gerid"},{"nome":"ROSIMEIRE DE LIMA ANTONINE","cpf":"067.520.818-16","acao":"BENEFICIO POR INCAPACIDADE","data":"2025-08-14","etapas":"JUDICIAL","atualizacao":"2026-03-06T16:12:21","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"5000133-43.2026.4.03.6331"},{"nome":"EVELIN CAROLINE DE OLIVEIRA COELHO LIBERALI","cpf":"533.262.768-85","acao":"SALARIO MATERNIDADE","data":"2025-09-01","etapas":"Recebendo Parcelas","atualizacao":"2026-03-12T10:32:56","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"Recebeu Parcela 4","obs":"VERIFICAR PARCELA SM TODO DIA 2"},{"nome":"THAIS DA COSTA DE SOUSA","cpf":"466.581.568-24","acao":"EXECUÇÃO","data":"2025-09-22","etapas":"Execução","atualizacao":"2026-03-08T20:33:17","dpp_dn":"","trafego_pago":"Trafego Pago","pendencia":"OK","parcela":"","obs":"4000498-27.2026.8.26.0322 - EXECUÇÃO ESCRITORIO - EPROC"},{"nome":"LETICIA FERNANDA SEL MANSANO","cpf":"475.221.488-12","acao":"SALARIO MATERNIDADE","data":"2025-10-06","etapas":"Benefício em Análise Adm","atualizacao":"2026-03-08T00:00:00","dpp_dn":"2026-02-10","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"Protocolar pelo Gerid"},{"nome":"VALTENCIR FRANCISCO","cpf":"197.596.138-24","acao":"BPC LOAS","data":"2025-10-13","etapas":"Benefício em Análise Adm","atualizacao":"2026-03-13T00:00:00","dpp_dn":"","trafego_pago":"Trafego Pago","pendencia":"Pendente","parcela":"","obs":"Solicitar Senha nova INSS"},{"nome":"IRACI INACIO DA SILVA","cpf":"108.822.888-73","acao":"BENEFICIO POR INCAPACIDADE","data":"2025-11-09","etapas":"Benefício em Análise Adm","atualizacao":"2026-03-09T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"Passou pela Pericia médica 25/03 - em analise"},{"nome":"ELIS REGINA DUTRA","cpf":"343.251.198-17","acao":"TRABALHISTA","data":"2025-11-11","etapas":"Aguardando Protocolar Analita","atualizacao":"2026-03-09T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"ADV. ANTHONY MARQUES"},{"nome":"DAIANE MARTINS PEREIRA DA SILVA","cpf":"522.630.228-21","acao":"SALARIO MATERNIDADE","data":"2025-11-13","etapas":"Benefício Aprovado/Aguard pagamento","atualizacao":"2026-03-12T00:00:00","dpp_dn":"2026-02-01","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"CONCEDIDO; 08/03"},{"nome":"DENISE VITORIA DO NASCIMENTO FERREIRA","cpf":"559.225.078-93","acao":"SALARIO MATERNIDADE","data":"2025-11-14","etapas":"Análise Recurso","atualizacao":"2026-03-05T00:00:00","dpp_dn":"2025-11-19","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"SM SOLICITADO NOVAMENTE 18/02 / avisar marido nilton"},{"nome":"RAISSA KAUANE FERREIRA","cpf":"581.893.218-46","acao":"SALARIO MATERNIDADE","data":"2025-11-14","etapas":"Recebendo Parcelas","atualizacao":"2026-03-12T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"24/03 Parcela 1 e 2 SM"},{"nome":"TAMIRES PATRICIA MARQUES","cpf":"427.538.178-55","acao":"SALARIO MATERNIDADE","data":"2025-11-18","etapas":"Recebendo Parcelas","atualizacao":"2026-03-12T00:00:00","dpp_dn":"2026-02-23","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"24/03 Parcela 1 SM"},{"nome":"JÚLIA RODRIGUES PEREIRA","cpf":"496.715.448-43","acao":"SALARIO MATERNIDADE","data":"2025-11-20","etapas":"Análise Recurso","atualizacao":"2026-03-12T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"SM SOLICITADO NOVAMENTE 18/02"},{"nome":"CARLOS ROBERTO LEAL DOS SANTOS","cpf":"451.390.118-75","acao":"BENEFICIO POR INCAPACIDADE","data":"2025-11-20","etapas":"Recebendo Parcelas","atualizacao":"2026-03-12T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"Recebeu Parcela 2","obs":""},{"nome":"MARIA EDUARDA DOS SANTOS SOARES","cpf":"577.584.778-44","acao":"SALARIO MATERNIDADE","data":"2025-11-21","etapas":"Análise Recurso","atualizacao":"2026-03-05T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"SM SOLICITADO NOVAMENTE 18/02"},{"nome":"PAULA XAVIER EVANGER","cpf":"533.262.768-85","acao":"EXECUÇÃO","data":"2025-11-22","etapas":"Execução","atualizacao":"2026-02-17T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"4000209-77.2026.8.26.0651"},{"nome":"PATRICIA APARECIDA TRANCOSO DE BRITO","cpf":"117.471.309-74","acao":"SALARIO MATERNIDADE","data":"2025-11-25","etapas":"Emitir Guia SM","atualizacao":"2026-03-08T00:00:00","dpp_dn":"2026-07-01","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"SENHA INVALIDA / perdeu o bb"},{"nome":"ANDRESSA APARECIDA XAVIER","cpf":"440.758.508-03","acao":"SALARIO MATERNIDADE","data":"2025-11-28","etapas":"Recebendo Parcelas","atualizacao":"2026-03-12T00:00:00","dpp_dn":"2025-12-22","trafego_pago":"Organico","pendencia":"OK","parcela":"Recebeu Parcela 3","obs":"Terceira parcela SM 27/02 - VERIFICAR PARCELA TODO DIA 16"},{"nome":"THAIS FERNANDA DOS SANTOS","cpf":"553.676.118-85","acao":"SALARIO MATERNIDADE","data":"2025-11-28","etapas":"Benefício em Análise Adm","atualizacao":"2026-03-05T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"JOICE DAIANA OLIVEIRA DOS SANTOS","cpf":"453.426.718-50","acao":"SALARIO MATERNIDADE","data":"2025-12-11","etapas":"Análise Recurso","atualizacao":"2026-03-05T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"SM SOLICITADO NOVAMENTE 18/02"},{"nome":"DAIANE CRISTINA DA SILVA FERREIRA MORAIS","cpf":"375.670.368-19","acao":"SALARIO MATERNIDADE","data":"2026-01-05","etapas":"Aguardando Doc para Protocolar","atualizacao":"2026-03-06T00:00:00","dpp_dn":"2026-03-01","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"aguardando nascimento"},{"nome":"THAIS DE CAMARGO PESSOA DOS SANTOS","cpf":"427.720.868-10","acao":"SALARIO MATERNIDADE","data":"2026-01-12","etapas":"Recebendo Parcelas","atualizacao":"2026-03-12T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"Recebeu Parcela 4","obs":"Quarta Parcela 06/03"},{"nome":"GABRIELA LISBOA RODRIGUES","cpf":"457.955.938-00","acao":"SALARIO MATERNIDADE","data":"2026-01-12","etapas":"Aguardando Judicializar Analita","atualizacao":"2026-03-11T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"Pendente","parcela":"","obs":"SM CESSADO POR CONTRIBUIÇÔES INDEVIDAS? Recorrer no judicial?"},{"nome":"CLARICE DANTAS DA SILVA","cpf":"158.043.518-18","acao":"BENEFICIO POR INCAPACIDADE","data":"2026-01-12","etapas":"Recebendo Parcelas","atualizacao":"2026-03-12T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"Recebeu Parcela 2","obs":"26/02 Segunda parcela"},{"nome":"DANIELLE CRISTINA DA SILVA DOS SANTOS","cpf":"512.258.368-40","acao":"SALARIO MATERNIDADE","data":"2026-01-17","etapas":"Aguardando Doc para Protocolar","atualizacao":"2026-02-19T00:00:00","dpp_dn":"2026-05-01","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"BARBARA FERREIRA BARBOSA","cpf":"454.918.918-51","acao":"SALARIO MATERNIDADE","data":"2026-01-17","etapas":"Emitir Guia SM","atualizacao":"2026-03-08T00:00:00","dpp_dn":"2026-07-19","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"MARIA EDUARDA OJEDA PERALTA","cpf":"092.251.411-90","acao":"SALARIO MATERNIDADE","data":"2026-01-20","etapas":"Benefício em Análise Adm","atualizacao":"2026-03-08T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"MICHELE RODRIGUES DE BRITO CAMPOS","cpf":"364.952.218-78","acao":"SALARIO MATERNIDADE","data":"2026-01-21","etapas":"Benefício em Análise Adm","atualizacao":"2026-03-05T00:00:00","dpp_dn":"2026-02-11","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"ANDRESSA DO NASCIMENTO TEIXEIRA","cpf":"466.389.218-35","acao":"SALARIO MATERNIDADE","data":"2026-01-22","etapas":"Aguardando Pagamento de Guia","atualizacao":"2026-03-11T00:00:00","dpp_dn":"2026-06-01","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"ENVIAR MENSAGEM MENSAL SM/ vai pagar a guia no mes 03"},{"nome":"NATIANE VIEIRA DA SILVA","cpf":"712.232.662-49","acao":"BPC LOAS","data":"2026-01-22","etapas":"Aguardando Pericia Médica INSS","atualizacao":"2026-03-09T00:00:00","dpp_dn":"","trafego_pago":"Trafego Pago","pendencia":"OK","parcela":"","obs":"Pericia Médica 17/04/2026 às 10:30"},{"nome":"CLERISVAN FERREIRA DA SILVA","cpf":"051.809.368-96","acao":"JUDICIAL","data":"2026-01-22","etapas":"Aguardando Pericia Médica INSS","atualizacao":"2026-03-09T00:00:00","dpp_dn":"","trafego_pago":"Trafego Pago","pendencia":"OK","parcela":"","obs":"FALTA PROTOCOLAR NO JUDICIAL"},{"nome":"ORLANDO FRAGA DE OLIVEIRA JÚNIOR","cpf":"074.091.718-80","acao":"BENEFICIO POR INCAPACIDADE","data":"2026-01-26","etapas":"Benefício em Análise Adm","atualizacao":"2026-03-08T00:00:00","dpp_dn":"","trafego_pago":"Trafego Pago","pendencia":"OK","parcela":"","obs":"Em analise desde 27/01/2026"},{"nome":"EDMAR NUNES BENTO","cpf":"830.915.994-34","acao":"BENEFICIO POR INCAPACIDADE","data":"2026-01-28","etapas":"Benefício em Análise Adm","atualizacao":"2026-03-11T00:00:00","dpp_dn":"","trafego_pago":"Trafego Pago","pendencia":"OK","parcela":"","obs":""},{"nome":"KAUANA APARECIDA DE SOUZA","cpf":"455.014.568-42","acao":"SALARIO MATERNIDADE","data":"2026-01-29","etapas":"Emitir Guia SM","atualizacao":"2026-03-08T00:00:00","dpp_dn":"2026-08-01","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"ENVIAR MENSAGEM MENSAL SM"},{"nome":"LIVIA ELOAH MAGALHAES DE ALMEIDA","cpf":"408.805.988-32","acao":"SALARIO MATERNIDADE","data":"2026-01-30","etapas":"Emitir Guia SM","atualizacao":"2026-02-17T00:00:00","dpp_dn":"2026-09-01","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"ENVIAR MENSAGEM MENSAL SM"},{"nome":"IZABEL CRISTINA DE LIMA CARVALHO","cpf":"258.889.538-73","acao":"BPC LOAS","data":"2026-02-03","etapas":"Aguardando Protocolar Analita","atualizacao":"2026-03-09T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"MARIA FERNANDA PEREIRA SANTOS","cpf":"541.243.568-89","acao":"SALARIO MATERNIDADE","data":"2026-02-04","etapas":"Emitir Guia SM","atualizacao":"2026-02-17T00:00:00","dpp_dn":"2026-06-01","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"ENVIAR MENSAGEM MENSAL SM"},{"nome":"BRUNA DA SILVA PEREIRA","cpf":"418.725.468-46","acao":"SALARIO MATERNIDADE","data":"2026-02-04","etapas":"Benefício Aprovado/Aguard pagamento","atualizacao":"2026-03-12T00:00:00","dpp_dn":"2025-12-11","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"10/03 Todas as parcelas - Vai ao banco dia 13"},{"nome":"ERICA COSTA DA SILVA","cpf":"433.137.708-35","acao":"SALARIO MATERNIDADE","data":"2026-02-05","etapas":"Emitir Guia SM","atualizacao":"2026-02-13T00:00:00","dpp_dn":"2026-06-23","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"HELLEN CRISTINA MARTINS CAVALHERO","cpf":"491.182.468-93","acao":"JUDICIAL","data":"2026-02-06","etapas":"JUDICIAL","atualizacao":"2026-03-08T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"ADV. EDSON R COSTA"},{"nome":"ANA LOIZA SABINO GRASIEL","cpf":"551.046.358-99","acao":"SALARIO MATERNIDADE","data":"2026-02-07","etapas":"Aguardando Doc para Protocolar","atualizacao":"2026-03-12T00:00:00","dpp_dn":"2026-04-02","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"LARISSA LIBERALI DA SILVA LEITE","cpf":"418.670.918-10","acao":"SALARIO MATERNIDADE","data":"2026-02-07","etapas":"Benefício em Análise Adm","atualizacao":"2026-03-05T00:00:00","dpp_dn":"2026-01-29","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"JOICE GRAZIELE MENDONCA","cpf":"020.252.511-22","acao":"SALARIO MATERNIDADE","data":"2026-02-07","etapas":"Aguardando Doc para Protocolar","atualizacao":"2026-03-05T00:00:00","dpp_dn":"2026-03-26","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"NATALIA DOS SANTOS","cpf":"484.380.218-24","acao":"SALARIO MATERNIDADE","data":"2026-02-09","etapas":"Aguardando Doc para Protocolar","atualizacao":"2026-03-12T00:00:00","dpp_dn":"2026-05-06","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"ANDRESA SIMÕES BIAJONE","cpf":"167.383.278-46","acao":"BENEFICIO POR INCAPACIDADE","data":"2026-02-10","etapas":"Benefício em Análise Adm","atualizacao":"2026-03-05T00:00:00","dpp_dn":"","trafego_pago":"Trafego Pago","pendencia":"OK","parcela":"","obs":""},{"nome":"DIVINA MARLENE ARAUJO","cpf":"009.406.411-35","acao":"BPC LOAS","data":"2026-02-11","etapas":"Aguardando Pericia Médica INSS","atualizacao":"2026-03-11T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"MANDAR MSG PARA A CLIENTE DO DIA E HORARIO"},{"nome":"GABRIELA FACCIN ROSALES","cpf":"019.088.501-75","acao":"ALIMENTOS","data":"2026-02-16","etapas":"JUDICIAL","atualizacao":"2026-03-04T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"VALCIRO LOPES DOS SANTOS","cpf":"937.725.561-91","acao":"BENEFICIO POR INCAPACIDADE","data":"2026-02-16","etapas":"Aguardando Doc para Protocolar","atualizacao":"2026-03-04T00:00:00","dpp_dn":"","trafego_pago":"Trafego Pago","pendencia":"Pendente","parcela":"","obs":"Falta senha gov"},{"nome":"GABRIELA FACCIN ROSALES","cpf":"019.088.501-75","acao":"SALARIO MATERNIDADE PRORROG","data":"2026-02-16","etapas":"Benefício em Análise Adm","atualizacao":"2026-03-10T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"THIAGO SOARES NOBREGA","cpf":"085.145.287-69","acao":"BENEFICIO POR INCAPACIDADE","data":"2026-02-17","etapas":"Aguardando Protocolar Analita","atualizacao":"2026-03-09T00:00:00","dpp_dn":"","trafego_pago":"Trafego Pago","pendencia":"OK","parcela":"","obs":"Entrar com recurso judicial"},{"nome":"BARBARA NICOLE DE DEUS SILVA","cpf":"454.831.038-07","acao":"SALARIO MATERNIDADE","data":"2026-02-23","etapas":"Aguardando Pagamento de Guia","atualizacao":"2026-02-23T00:00:00","dpp_dn":"2026-04-01","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"RAIMUNDA VIEIRA DOS SANTOS","cpf":"009.432.453-03","acao":"BPC LOAS","data":"2026-02-23","etapas":"Aguardando Doc para Protocolar","atualizacao":"2026-03-04T00:00:00","dpp_dn":"","trafego_pago":"Trafego Pago","pendencia":"Pendente","parcela":"","obs":"Consulta médica 09/03 14h20"},{"nome":"MAIARA ALESSANDRA FERREIRA","cpf":"426.931.718-30","acao":"SALARIO MATERNIDADE","data":"2026-02-24","etapas":"Benefício Aprovado/Aguard pagamento","atualizacao":"2026-03-12T00:00:00","dpp_dn":"2026-02-25","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"Concedido dia 10/03 Verificar data de pagamento"},{"nome":"REGINALDO DA SILVA TORRES","cpf":"856.443.313-34","acao":"BPC LOAS","data":"2026-02-24","etapas":"Aguardando Doc para Protocolar","atualizacao":"2026-03-04T00:00:00","dpp_dn":"","trafego_pago":"Trafego Pago","pendencia":"Pendente","parcela":"","obs":"Já consultou na Clinica, Laudo Pronto"},{"nome":"LAURINDA BRECIANI","cpf":"097.055.727-20","acao":"BENEFICIO POR INCAPACIDADE","data":"2026-02-25","etapas":"Aguardando Protocolar Analita","atualizacao":"2026-03-09T00:00:00","dpp_dn":"","trafego_pago":"Trafego Pago","pendencia":"OK","parcela":"","obs":""},{"nome":"DEBORA BARBIERI","cpf":"478.205.848-90","acao":"SALARIO MATERNIDADE","data":"2026-03-02","etapas":"Aguardando Pagamento de Guia","atualizacao":"2026-03-12T00:00:00","dpp_dn":"2026-05-15","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"ver data que precisa gerar guia"},{"nome":"ANA BEATRIZ CARVALHO DA SILVA","cpf":"454.611.188-60","acao":"SALARIO MATERNIDADE","data":"2026-03-02","etapas":"Emitir Guia SM","atualizacao":"2026-03-03T00:00:00","dpp_dn":"2026-10-17","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"Emitir guia no Mês 07"},{"nome":"ANA JULIA FRANCHI MANOEL","cpf":"499.657.408-95","acao":"SALARIO MATERNIDADE","data":"2026-03-03","etapas":"Emitir Guia SM","atualizacao":"2026-03-03T00:00:00","dpp_dn":"2026-09-01","trafego_pago":"Trafego Pago","pendencia":"OK","parcela":"","obs":""},{"nome":"GABRIELA APARECIDA RODRIGUES NOVAIS","cpf":"532.419.998-23","acao":"SALARIO MATERNIDADE","data":"2026-03-03","etapas":"Emitir Guia SM","atualizacao":"2026-03-03T00:00:00","dpp_dn":"2026-07-25","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"THALIA ALVES SOARES","cpf":"459.325.978-95","acao":"SALARIO MATERNIDADE","data":"2026-03-03","etapas":"Aguardando Protocolar Analita","atualizacao":"2026-03-09T00:00:00","dpp_dn":"2025-02-26","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"Judicializar SM indeferido"},{"nome":"APARECIDO JOSE DOS SANTOS","cpf":"056.632.358-33","acao":"BPC LOAS","data":"2026-03-04","etapas":"Aguardando Doc para Protocolar","atualizacao":"2026-03-04T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"BPCLoas Idoso, aguardando 65 anos dia 23/03/2026"},{"nome":"ANA CAROLINA TRINDADE","cpf":"458.299.018-54","acao":"REGULAMENTAÇÃO DE VISITAS","data":"2026-03-09","etapas":"Aguardando Protocolar Analita","atualizacao":"2026-03-12T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"JULIANA ALVES MARETTI YAMAGUCHI","cpf":"219.293.678-80","acao":"BENEFICIO POR INCAPACIDADE","data":"2026-03-10","etapas":"Aguardando Protocolar Analita","atualizacao":"2026-03-10T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"SUZIANI ANDRESSA ROSSIGNOLO DOS SANTOS","cpf":"008.030.891-04","acao":"SALARIO MATERNIDADE","data":"2026-03-11","etapas":"Aguardando Protocolar Analita","atualizacao":"2026-03-11T00:00:00","dpp_dn":"2022-05-16","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":""},{"nome":"ANA MARIA FERREIRA COELHO","cpf":"416.274.829-20","acao":"BENEFICIO POR INCAPACIDADE","data":"2026-03-11","etapas":"Aguardando Doc para Judicializar","atualizacao":"2026-03-13T00:00:00","dpp_dn":"","trafego_pago":"Trafego Pago","pendencia":"OK","parcela":"","obs":"Auxilio Acidente (agendar consulta médica para atualizar laudo)"},{"nome":"PEDRO FRANCISCO DA SILVA FILHO","cpf":"075.287.218-40","acao":"BENEFICIO POR INCAPACIDADE","data":"2026-03-13","etapas":"Aguardando Protocolar Analita","atualizacao":"2026-03-13T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"OK","parcela":"","obs":"Reestabelecimento de benefício Incapacidade permanente"},{"nome":"BENJAMIN OLIVEIRA FEITOSA","cpf":"585.397.988-40","acao":"BPC LOAS","data":"","etapas":"JUDICIAL","atualizacao":"2026-03-09T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"Pendente","parcela":"","obs":"5003056-76.2025.4.03.6331"},{"nome":"LORENZO BELLI RODRIGUES DE MELO","cpf":"038.460.038-75","acao":"BPC LOAS","data":"","etapas":"JUDICIAL","atualizacao":"2026-03-12T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"Pendente","parcela":"","obs":"5001761-04.2025.4.03.6331 - Administrativo aprovado, falta sair Judicial"},{"nome":"ANA WITORIA ALVES VIEIRA","cpf":"596.483.718-22","acao":"ALIMENTOS","data":"","etapas":"Recebendo Parcelas","atualizacao":"2026-03-12T00:00:00","dpp_dn":"","trafego_pago":"Organico","pendencia":"Pendente","parcela":"Recebeu Parcela 1","obs":"Qual parcela recebeu? até quando vai pagar?"}];
+
+// ── STATE ──
+let DB=JSON.parse(localStorage.getItem('cj_v5')||'null')||RAW.map((c,i)=>({...c,_id:i}));
+let NID=DB.reduce((m,c)=>Math.max(m,c._id||0),0)+1;
+let FILT=[...DB];
+let SF='data',SD=-1;
+let EID=null,OBSID=null,STATK=null;
+let _stT=null,_stP=false;
+
+const COLS=['nome','cpf','acao','data','etapas','atualizacao','dpp_dn','trafego_pago','pendencia','parcela','obs'];
+const HDRS=['NOME','CPF','AÇÃO','DATA','ETAPA','ATUALIZAÇÃO','DPP/DN','TRÁFEGO','PENDÊNCIA','PARCELA','OBS'];
+const DW=[220,130,170,95,230,150,95,100,110,110,230];
+let CW=JSON.parse(localStorage.getItem('cj_cw5')||'null')||[...DW];
+
+function persist(){
+  localStorage.setItem('cj_v5',JSON.stringify(DB));
+  if(currentUser)safeSave();
+}
+async function safeSave(){
+  if(!sb||!currentUser)return;
+  try{
+    var rows=DB.map(function(c){
+      var d={};var k;
+      for(k in c){if(k!=='_id')d[k]=c[k];}
+      d.user_id=currentUser.id;
+      d._local_id=c._id;
+      return d;
+    });
+    await sb.from('contratos').delete().eq('user_id',currentUser.id);
+    if(rows.length>0)await sb.from('contratos').insert(rows);
+  }catch(e){console.log('Save err:',e);}
+}
+async function loadAll(){
+  if(!sb||!currentUser)return;
+  try{
+    var result=await sb.from('contratos').select('*');
+    if(result.error)throw result.error;
+    if(result.data&&result.data.length>0){
+      DB=result.data.map(function(c){c._id=c._local_id||c.id;delete c.user_id;return c;});
+      NID=Math.max.apply(null,DB.map(function(c){return c._id||0;}))+1;
+      FILT=[...DB];
+      buildFilters();applyFilter();renderStats();renderNewRowFixed();
+    }
+  }catch(e){console.log('Load err:',e);}
+}
+function saveCW(){localStorage.setItem('cj_cw5',JSON.stringify(CW));}
+function now(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
+}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// Format CPF: 12345678901 -> 123.456.789-01
+function fmtCPF(v){
+  const d=(v||'').replace(/\D/g,'');
+  if(d.length<=3)return d;
+  if(d.length<=6)return d.slice(0,3)+'.'+d.slice(3);
+  if(d.length<=9)return d.slice(0,3)+'.'+d.slice(3,6)+'.'+d.slice(6);
+  return d.slice(0,3)+'.'+d.slice(3,6)+'.'+d.slice(6,9)+'-'+d.slice(9,11);
+}
+
+// Live CPF formatting on input
+function onCPFInput(el){
+  const raw=el.value.replace(/\D/g,'').slice(0,11);
+  const formatted=fmtCPF(raw);
+  if(el.value!==formatted){el.value=formatted;}
+}
+
+
+function fmtDT(v){
+  if(!v)return '—';
+  try{
+    const s=v.toString();
+    // Parse as local time (the date string is already in local format from now())
+    const dt=s.includes('T')?new Date(s):new Date(s+'T00:00:00');
+    if(isNaN(dt))return s.slice(0,10);
+    // Format in Brazil timezone (Brasilia)
+    const opts={timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false};
+    const parts=new Intl.DateTimeFormat('pt-BR',opts).formatToParts(dt);
+    const get=(type)=>(parts.find(p=>p.type===type)||{}).value||'';
+    return `${get('day')}/${get('month')}/${get('year')} ${get('hour')}:${get('minute')}`;
+  }catch(e){return String(v);}
+}
+function fmtD(v){if(!v)return '—';const p=v.slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:v;}
+function trafegoLbl(v){return v==='Trafego Pago'?'💰 Tráfego Pago':v==='Organico'?'🌱 Orgânico':v||'—';}
+
+// ── ETAPA SELECT ──
+function populateEtapaSelect(){
+  const sel=document.getElementById('fe');const cur=sel.value;
+  sel.innerHTML='<option value="">Selecione...</option>'+ET_OPTS.map(o=>`<option value="${esc(o.v)}">${esc(o.v)}</option>`).join('');
+  if(cur)sel.value=cur;
+}
+
+// ── STATS ──
+function renderStats(){
+  const tot=DB.length,pend=DB.filter(c=>c.pendencia==='Pendente').length;
+  const am={};DB.forEach(c=>{if(c.acao)am[c.acao]=(am[c.acao]||0)+1;});
+  const top=Object.entries(am).sort((a,b)=>b[1]-a[1])[0];
+  const org=DB.filter(c=>c.trafego_pago==='Organico').length;
+  const parc=DB.filter(c=>c.parcela).length;
+  let topCol='#3ecf8e';
+  if(top){
+    const topAcao=AC_OPTS.find(x=>x.v.toUpperCase()===top[0].toUpperCase());
+    if(topAcao)topCol=topAcao.c;
+  }
+  const cards=[
+    {k:'tot',lbl:'Total',val:tot,sub:'contratos',col:'var(--acc)',fn:"clearAll()"},
+    {k:'pend',lbl:'Pendentes',val:pend,sub:'requer atenção',col:'var(--warn)',fn:"statFilter('pend')"},
+    {k:'top',lbl:'Ação top',val:top?top[1]:0,sub:top?top[0]:'—',col:topCol,fn:"statFilter('top')"},
+    {k:'org',lbl:'Orgânico',val:org,sub:'tráfego orgânico',col:'#22d3ee',fn:"statFilter('org')"},
+    {k:'parc',lbl:'Parcelas',val:parc,sub:'com parcelas',col:'#fbbf24',fn:"statFilter('parc')"},
+  ];
+  document.getElementById('SG').innerHTML=cards.map(c=>`<div class="sc ${STATK===c.k?'active':''}" style="--sc-color:${c.col}" onclick="${c.fn}" title="Clique para filtrar"><span class="sc-hint">filtrar ▼</span><div class="sc-lbl">${c.lbl}</div><div class="sc-val">${c.val}</div><div class="sc-sub">${c.sub}</div></div>`).join('');
+}
+
+function statFilter(k){
+  STATK=k;_stT=null;_stP=false;
+  const am={};DB.forEach(c=>{if(c.acao)am[c.acao]=(am[c.acao]||0)+1;});
+  const top=Object.entries(am).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('FA').value='';document.getElementById('FP').value='';document.getElementById('FE').value='';document.getElementById('SI').value='';
+  if(k==='pend')document.getElementById('FP').value='Pendente';
+  else if(k==='top'&&top)document.getElementById('FA').value=top[0];
+  else if(k==='org')_stT='Organico';
+  else if(k==='parc')_stP=true;
+  document.getElementById('CB').classList.add('show');
+  renderStats();applyFilter();
+}
+
+function clearAll(){
+  STATK=null;_stT=null;_stP=false;
+  ['FA','FE','FP'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('SI').value='';
+  document.getElementById('CB').classList.remove('show');
+  renderStats();applyFilter();
+}
+
+// ── HEADER ──
+function buildHeader(){
+  document.getElementById('CG').innerHTML=COLS.map((_,i)=>`<col>`).join('')+'<col style="width:52px">';
+  document.getElementById('TH').innerHTML='<tr>'+HDRS.map((h,i)=>{const k=COLS[i],ind=SF===k?(SD===1?'↑':'↓'):'';return `<th class="c-${k}" onclick="sortBy('${k}')"><div class="th-in"><span>${h}</span><span class="sind">${ind}</span></div><div class="rh" onclick="event.stopPropagation()" onmousedown="startR(event,${i})"></div></th>`;}).join('')+'<th style="width:52px"></th></tr>';
+}
+
+// ── RESIZE (drag column border to set width) ──
+let RES=null;
+function startR(e,i){
+  e.preventDefault();
+  RES={i,x0:e.clientX,el:e.target};
+  const rh=e.target;rh.classList.add('on');
+  const mv=ev=>{
+    const diff=ev.clientX-RES.x0;
+    const nw=Math.max(50,(CW[i]||100)+diff);
+    CW[RES.i]=nw;
+    const cols=document.querySelectorAll('#CG col');
+    if(cols[RES.i])cols[RES.i].style.width=nw+'px';
+    const ths=document.querySelectorAll('#TH th');
+    if(ths[RES.i])ths[RES.i].style.width=nw+'px';
+  };
+  const up=()=>{rh.classList.remove('on');saveCW();document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);RES=null;};
+  document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+}
+
+// ── FILTERS ──
+function buildFilters(){
+  const acoes=[...new Set(DB.map(c=>c.acao).filter(Boolean))].sort();
+  const fa=document.getElementById('FA'),curA=fa.value;
+  fa.innerHTML='<option value="">Todas as ações</option>'+acoes.map(a=>`<option value="${esc(a)}"${curA===a?' selected':''}>${esc(a)}</option>`).join('');
+  const etSet=new Set(DB.map(c=>c.etapas).filter(Boolean));
+  const fe=document.getElementById('FE'),curE=fe.value;
+  const orderedE=ET_OPTS.map(o=>o.v).filter(v=>etSet.has(v));
+  const extras=[...etSet].filter(v=>!ET_OPTS.find(o=>o.v===v)).sort();
+  fe.innerHTML='<option value="">Todas as etapas</option>'+[...orderedE,...extras].map(e=>`<option value="${esc(e)}"${curE===e?' selected':''}>${esc(e)}</option>`).join('');
+}
+
+function applyFilter(){
+  const q=document.getElementById('SI').value.toLowerCase().trim();
+  const a=document.getElementById('FA').value,e=document.getElementById('FE').value,p=document.getElementById('FP').value;
+  FILT=DB.filter(c=>{
+    if(a&&c.acao!==a)return false;if(e&&c.etapas!==e)return false;if(p&&c.pendencia!==p)return false;
+    if(_stT&&c.trafego_pago!==_stT)return false;if(_stP&&!c.parcela)return false;
+    if(q){const h=[c.nome,c.cpf,c.acao,c.etapas,c.obs,c.parcela,c.dpp_dn].join(' ').toLowerCase();if(!h.includes(q))return false;}
+    return true;
+  });
+  const any=q||a||e||p||_stT||_stP||STATK;
+  document.getElementById('CB').classList.toggle('show',!!any);
+  sortRender();
+}
+
+// ── SORT ──
+function sortBy(k){if(SF===k)SD*=-1;else{SF=k;SD=1;}buildHeader();sortRender();}
+function sortRender(){
+  FILT.sort((a,b)=>{
+    const va=a[SF]||'',vb=b[SF]||'';
+    const aa=va.toString().toLowerCase(),bb=vb.toString().toLowerCase();
+    return aa<bb?-SD:aa>bb?SD:0;
+  });
+  renderTable();
+}
+
+// ── INLINE DROPDOWN ──
+let DROP=null;
+function closeDrop(){if(DROP){DROP.remove();DROP=null;}}
+
+function openDrop(e,opts,curVal,onPick){
+  e.stopPropagation();closeDrop();
+  const td=e.currentTarget;
+  const menu=document.createElement('div');menu.className='idrop';menu.onclick=ev=>ev.stopPropagation();
+  // Find longest text to determine if we need smaller font
+  let maxLen=0;
+  opts.forEach(o=>{const v=typeof o==='string'?o:o.v;if(v.length>maxLen)maxLen=v.length;});
+  if(maxLen>30)menu.style.fontSize='.66rem';
+  opts.forEach(o=>{
+    const val=typeof o==='string'?o:o.v,col=typeof o==='string'?null:o.c;
+    const d=document.createElement('div');d.className='iopt'+(val===curVal?' sel':'');
+    if(col){const dot=document.createElement('span');dot.className='iopt-dot';dot.style.background=col;d.appendChild(dot);}
+    const txt=document.createElement('span');txt.textContent=val;d.appendChild(txt);
+    d.addEventListener('mousedown',ev=>{ev.preventDefault();ev.stopPropagation();onPick(val);closeDrop();});
+    menu.appendChild(d);
+  });
+  document.body.appendChild(menu);DROP=menu;
+  // Measure needed width and position near the clicked element
+  const mr=menu.getBoundingClientRect();
+  const neededW=Math.max(240,mr.width);
+  const r=td.getBoundingClientRect();
+  const menuH=340;
+  let top=r.bottom+2;
+  if(top+menuH>window.innerHeight-8)top=r.top-menuH-2;
+  top=Math.max(8,Math.min(top,window.innerHeight-menuH-8));
+  menu.style.top=top+'px';
+  menu.style.left=Math.max(8,Math.min(r.left,window.innerWidth-neededW-8))+'px';
+  menu.style.width=Math.min(neededW,window.innerWidth-16)+'px';
+  const outside=ev=>{if(!menu.contains(ev.target)){closeDrop();document.removeEventListener('click',outside,true);document.getElementById('TS').removeEventListener('scroll',outside);}};
+  setTimeout(()=>{document.addEventListener('click',outside,true);document.getElementById('TS').addEventListener('scroll',outside,{once:true});},0);
+}
+
+function upd(id,field,val,autoAtu=false){
+  const i=DB.findIndex(c=>c._id===id);if(i===-1)return;
+  DB[i][field]=val;if(autoAtu)DB[i].atualizacao=now();
+  persist();buildFilters();applyFilter();renderStats();
+}
+
+// ── INLINE NEW ROW ──
+// New row state (persisted across filter changes)
+let NR={nome:'',cpf:'',acao:'',data:'',etapas:'',dpp_dn:'',trafego_pago:'',pendencia:'',parcela:'',obs:''};
+
+function nrSel(opts,field,placeholder){
+  return `<select class="new-sel" onchange="NR['${field}']=this.value" id="NR_${field}">
+    <option value="">${placeholder}</option>
+    ${opts.map(o=>`<option value="${esc(typeof o==='string'?o:o.v)}">${esc(typeof o==='string'?o:o.v)}</option>`).join('')}
+  </select>`;
+}
+
+function buildNewRowFixed(){
+  const etOpts=ET_OPTS;
+  const acOpts=['JUDICIAL','BENEFICIO POR INCAPACIDADE','EXECUÇÃO','SALARIO MATERNIDADE','BPC LOAS','TRABALHISTA','ALIMENTOS','SALARIO MATERNIDADE PRORROG','REGULAMENTAÇÃO DE VISITAS'];
+  const showParcela=NR.etapas==='Recebendo Parcelas';
+  const parcelOpts=['Recebeu Parcela 1','Recebeu Parcela 2','Recebeu Parcela 3','Recebeu Parcela 4','Recebeu Parcela 5','Recebeu Parcela 6'];
+  return `<table style="table-layout:fixed;width:100%;"><colgroup>${CW.map(w=>`<col style="width:${w}px">`).join('')}<col style="width:66px"></colgroup><tr>
+    <td><input class="new-inp" placeholder="Nome..." value="${esc(NR.nome)}" oninput="NR.nome=this.value" id="NR_nome"></td>
+    <td><input class="new-inp" placeholder="CPF..." value="${esc(NR.cpf)}" oninput="NR.cpf=this.value;onCPFInput(this)" style="font-family:'DM Mono',monospace;font-size:.73rem"></td>
+    <td>${nrSel(acOpts,'acao','Ação...')}</td>
+    <td><input class="new-inp" type="date" value="${esc(NR.data)}" onchange="NR.data=this.value" id="NR_data" style="font-family:'DM Mono',monospace;font-size:.72rem"></td>
+    <td><select class="new-sel" onchange="NR.etapas=this.value;nrEtapaChanged(this.value)" id="NR_etapas"><option value="">Etapa...</option>${etOpts.map(o=>`<option value="${esc(o.v)}">${esc(o.v)}</option>`).join('')}</select></td>
+    <td><span class="new-row-hint">— auto —</span></td>
+    <td><input class="new-inp" type="date" value="${esc(NR.dpp_dn)}" onchange="NR.dpp_dn=this.value" style="font-family:'DM Mono',monospace;font-size:.72rem"></td>
+    <td>${nrSel(['Organico','Trafego Pago'],'trafego_pago','Tráfego...')}</td>
+    <td>${nrSel(['OK','Pendente'],'pendencia','Pendência...')}</td>
+    <td id="PC_TD">${parcelaCell(showParcela,parcelOpts)}</td>
+    <td><input class="new-inp" placeholder="Obs..." value="${esc(NR.obs)}" oninput="NR.obs=this.value"></td>
+    <td><button class="new-add-btn" onclick="commitNewRow()" title="Adicionar contrato">✓ Add</button></td>
+  </tr></table>`;
+}
+
+function parcelaCell(show,opts){
+  if(!show)return '<span class="new-row-hint" id="PC_H">—</span>';
+  return `<select class="new-sel" onchange="NR.parcela=this.value" id="NR_parcela"><option value="">—</option>${opts.map(o=>`<option value="${o}">${o.replace('Recebeu ','')}</option>`).join('')}</select>`;
+}
+
+function nrEtapaChanged(v){
+  NR.etapas=v;
+  const td=document.getElementById('PC_TD');
+  if(!td)return;
+  const show=v==='Recebendo Parcelas';
+  td.innerHTML=parcelaCell(show,['Recebeu Parcela 1','Recebeu Parcela 2','Recebeu Parcela 3','Recebeu Parcela 4','Recebeu Parcela 5','Recebeu Parcela 6']);
+  if(show&&NR.parcela){const pe=document.getElementById('NR_parcela');if(pe)pe.value=NR.parcela;}
+  if(!show)NR.parcela='';
+}
+
+function restoreNRValues(){
+  ['acao','trafego_pago','pendencia','parcela'].forEach(f=>{
+    const el=document.getElementById('NR_'+f);if(el&&NR[f])el.value=NR[f];
+  });
+  const etEl=document.getElementById('NR_etapas');
+  if(etEl&&NR.etapas)etEl.value=NR.etapas;
+  if(NR.etapas==='Recebendo Parcelas'){
+    const td=document.getElementById('PC_TD');
+    if(td)td.innerHTML=parcelaCell(true,['Recebeu Parcela 1','Recebeu Parcela 2','Recebeu Parcela 3','Recebeu Parcela 4','Recebeu Parcela 5','Recebeu Parcela 6']);
+  }
+  if(NR.parcela){const pe=document.getElementById('NR_parcela');if(pe)pe.value=NR.parcela;}
+}
+
+function renderNewRowFixed(){
+  document.getElementById('NR_FIXED').innerHTML=buildNewRowFixed();
+  restoreNRValues();
+}
+
+function commitNewRow(){
+  const nome=(NR.nome||'').trim();
+  if(!nome){
+    const el=document.getElementById('NR_nome');
+    if(el){el.style.borderBottomColor='var(--warn)';setTimeout(()=>el.style.borderBottomColor='',1500);}
+    toast('Nome é obrigatório','err');return;
+  }
+  DB.push({_id:NID++,nome,cpf:NR.cpf,acao:NR.acao,data:NR.data,etapas:NR.etapas,atualizacao:now(),dpp_dn:NR.dpp_dn,trafego_pago:NR.trafego_pago,pendencia:NR.pendencia,parcela:NR.parcela,obs:NR.obs});
+  // Reset
+  NR={nome:'',cpf:'',acao:'',data:'',etapas:'',dpp_dn:'',trafego_pago:'',pendencia:'',parcela:'',obs:''};
+  persist();buildFilters();applyFilter();renderStats();renderNewRowFixed();
+  toast('Contrato adicionado ✓');
+  // Focus name field
+  setTimeout(()=>{const el=document.getElementById('NR_nome');if(el)el.focus();},80);
+}
+
+// ── TABLE ──
+function renderTable(){
+  const tb=document.getElementById('TB');
+  const em=document.getElementById('EM');
+  document.getElementById('TC').textContent=`${FILT.length} de ${DB.length}`;
+
+  let rows='';
+  if(!FILT.length){
+    em.style.display='block';
+  } else {
+    em.style.display='none';
+    rows=FILT.map(c=>`<tr>
+      <td class="c-nome" title="${esc(c.nome)}"><span class="nome-t">${esc(c.nome)||'—'}</span></td>
+      <td class="c-cpf">${esc(c.cpf)||'—'}</td>
+      <td class="c-click" title="Clique para alterar" onclick="openDrop(event,AC_OPTS,'${esc(c.acao)}',(v)=>upd(${c._id},'acao',v))">
+        <span class="ehint">✎</span><span class="abadge" style="${acaoStyle(c.acao)}">${esc(c.acao)||'—'}</span></td>
+      <td class="c-data">${fmtD(c.data)}</td>
+      <td class="c-click" title="Clique para alterar" onclick="openDrop(event,ET_OPTS,'${esc(c.etapas)}',(v)=>upd(${c._id},'etapas',v,true))">
+        <span class="ehint">✎</span><span class="etbdg" style="${etapaStyle(c.etapas)}">${esc(c.etapas)||'—'}</span></td>
+      <td class="c-atu"><div class="atu-w"><span class="atu-t">${fmtDT(c.atualizacao)}</span><button class="rfbtn" onclick="event.stopPropagation();upd(${c._id},'atualizacao',now());toast('Atualizado ✓')" title="Registrar agora">↻</button></div></td>
+      <td class="c-dpp c-click" onclick="openEditCell(${c._id},'dpp_dn',${JSON.stringify(c.dpp_dn||'').replace(/'/g,"\\'")})">${fmtD(c.dpp_dn)}</td>
+      <td class="c-click" title="Clique para alterar" onclick="openDrop(event,['Organico','Trafego Pago'],'${esc(c.trafego_pago)}',(v)=>upd(${c._id},'trafego_pago',v))">
+        <span class="ehint">✎</span><span style="font-size:.77rem">${trafegoLbl(c.trafego_pago)}</span></td>
+      <td class="c-click" title="Clique para alterar" onclick="openDrop(event,['OK','Pendente'],'${esc(c.pendencia)}',(v)=>upd(${c._id},'pendencia',v))">
+        <span class="ehint">✎</span><span class="bdg ${c.pendencia==='OK'?'b-ok':'b-pend'}">${c.pendencia||'—'}</span></td>
+      <td>${c.etapas==='Recebendo Parcelas'?`<span class="c-click" onclick="openParcelaDrop(event,${c._id},'${esc(c.parcela)}')"><span class="pbdg">${c.parcela?esc(c.parcela.replace('Recebeu ','')):'—'}</span></span>`:`<span style="color:var(--txd)">${c.parcela?esc(c.parcela.replace('Recebeu ','')):'—'}</span>`}</td>
+      <td class="c-obs" onclick="openObs(${c._id})" title="Clique para editar">${c.obs?esc(c.obs):'<span style="color:var(--txd)">—</span>'}</td>
+      <td class="c-act" onclick="event.stopPropagation()"><div class="racts">
+        <button class="rbtn ed" onclick="openEdit(${c._id})" title="Editar">✏️</button>
+        <button class="rbtn dl" onclick="askDel(${c._id})" title="Excluir">🗑</button>
+      </div></td>
+    </tr>`).join('');
+  }
+
+  tb.innerHTML=rows;
+}
+
+// ── OBS ──
+function openObs(id){const c=DB.find(x=>x._id===id);if(!c)return;OBSID=id;document.getElementById('OL').textContent=c.nome;document.getElementById('OT').value=c.obs||'';document.getElementById('OO').classList.add('open');setTimeout(()=>document.getElementById('OT').focus(),80);}
+function closeObs(){document.getElementById('OO').classList.remove('open');}
+function saveObs(){if(OBSID===null)return;upd(OBSID,'obs',document.getElementById('OT').value.trim());closeObs();toast('Obs salva');}
+
+// ── EDIT MODAL ──
+function openEdit(id){
+  const c=DB.find(x=>x._id===id);if(!c)return;EID=id;
+  document.getElementById('ML').textContent='Editar Contrato';
+  document.getElementById('fn').value=c.nome||'';document.getElementById('fc').value=fmtCPF((c.cpf||'').replace(/\D/g,''));
+  document.getElementById('fa').value=c.acao||'';document.getElementById('fd').value=c.data||'';
+  document.getElementById('fe').value=c.etapas||'';document.getElementById('fdn').value=c.dpp_dn||'';
+  document.getElementById('ft').value=c.trafego_pago||'';document.getElementById('fp').value=c.pendencia||'';
+  document.getElementById('fpc').value=c.parcela||'';document.getElementById('fo').value=c.obs||'';
+  document.getElementById('MO').classList.add('open');
+}
+function closeM(){document.getElementById('MO').classList.remove('open');}
+function saveC(){
+  const nm=document.getElementById('fn').value.trim();if(!nm){toast('Nome obrigatório','err');return;}
+  const newE=document.getElementById('fe').value;
+  let atu=now();
+  if(EID!==null){const old=DB.find(c=>c._id===EID);if(old&&old.etapas===newE)atu=old.atualizacao;}
+  // Normalize CPF: strip non-digits then format
+  const rawCpf=(document.getElementById('fc').value||'').replace(/\D/g,'');
+  const cpf=rawCpf.length>=11?fmtCPF(rawCpf):rawCpf;
+  const d={nome:nm,cpf,acao:document.getElementById('fa').value,data:document.getElementById('fd').value,etapas:newE,atualizacao:atu,dpp_dn:document.getElementById('fdn').value,trafego_pago:document.getElementById('ft').value,pendencia:document.getElementById('fp').value,parcela:document.getElementById('fpc').value,obs:document.getElementById('fo').value.trim()};
+  const i=DB.findIndex(c=>c._id===EID);if(i!==-1)DB[i]={...d,_id:EID};
+  toast('Atualizado');persist();closeM();buildFilters();applyFilter();renderStats();
+}
+
+// ── DETAIL ──
+function openDet(id){
+  const c=DB.find(x=>x._id===id);if(!c)return;
+  document.getElementById('DT').textContent=c.nome||'Contrato';
+  document.getElementById('DB').innerHTML=`<div class="ds"><div class="dst">Identificação</div><div class="dg"><div class="di full"><div class="dil">Nome</div><div class="dv">${esc(c.nome)||'—'}</div></div><div class="di"><div class="dil">CPF</div><div class="dv" style="font-family:'DM Mono',monospace">${esc(c.cpf)||'—'}</div></div><div class="di"><div class="dil">Tráfego</div><div class="dv">${trafegoLbl(c.trafego_pago)}</div></div></div></div><div class="ds"><div class="dst">Processo</div><div class="dg"><div class="di"><div class="dil">Ação</div><div class="dv"><span class="abadge" style="${acaoStyle(c.acao)}">${esc(c.acao)||'—'}</span></div></div><div class="di"><div class="dil">Etapa</div><div class="dv"><span class="etbdg" style="${etapaStyle(c.etapas)}">${esc(c.etapas)||'—'}</span></div></div><div class="di"><div class="dil">Data</div><div class="dv">${fmtD(c.data)}</div></div><div class="di"><div class="dil">Atualização</div><div class="dv">${fmtDT(c.atualizacao)}</div></div><div class="di"><div class="dil">DPP ou DN</div><div class="dv">${fmtD(c.dpp_dn)}</div></div><div class="di"><div class="dil">Pendência</div><div class="dv"><span class="bdg ${c.pendencia==='OK'?'b-ok':'b-pend'}">${c.pendencia||'—'}</span></div></div>${c.parcela?`<div class="di full"><div class="dil">Parcela</div><div class="dv"><span class="pbdg">${esc(c.parcela)}</span></div></div>`:''}</div></div>${c.obs?`<div class="ds"><div class="dst">Obs</div><div class="di full"><div class="dv" style="white-space:pre-wrap;font-weight:400;font-size:.8rem;color:var(--txm)">${esc(c.obs)}</div></div></div>`:''}`;
+  document.getElementById('DEB').onclick=()=>{closeDet();openEdit(id);};
+  document.getElementById('DDB').onclick=()=>{closeDet();askDel(id);};
+  document.getElementById('DO').classList.add('open');
+}
+function closeDet(){document.getElementById('DO').classList.remove('open');}
+
+// ── INLINE CELL EDIT (DPP/DN) ──
+let EDIT_CELL_ID=null,EDIT_CELL_FIELD=null;
+function openEditCell(id,field,curVal){
+  EDIT_CELL_ID=id;EDIT_CELL_FIELD=field;
+  const cell=event.currentTarget;
+  const input=document.createElement('input');
+  input.type='date';
+  input.value=curVal||'';
+  input.style.cssText='width:100%;background:var(--surf3);border:1px solid var(--acc);border-radius:5px;padding:4px 6px;color:var(--tx);font-family:DM Mono,monospace;font-size:.72rem';
+  input.onblur=()=>saveEditCell();
+  input.onkeydown=e=>{if(e.key==='Enter')saveEditCell();if(e.key==='Escape')cancelEditCell();};
+  cell.innerHTML='';
+  cell.appendChild(input);
+  input.focus();
+}
+function saveEditCell(){
+  if(EDIT_CELL_ID===null)return;
+  const cell=event.target;
+  upd(EDIT_CELL_ID,EDIT_CELL_FIELD,cell.value);
+  EDIT_CELL_ID=null;EDIT_CELL_FIELD=null;
+}
+function cancelEditCell(){
+  if(EDIT_CELL_ID===null)return;
+  renderTable();
+  EDIT_CELL_ID=null;EDIT_CELL_FIELD=null;
+}
+
+// ── INLINE PARCELA DROP ──
+function openParcelaDrop(e,id,curVal){
+  openDrop(e,['Recebeu Parcela 1','Recebeu Parcela 2','Recebeu Parcela 3','Recebeu Parcela 4','Recebeu Parcela 5','Recebeu Parcela 6'],curVal,(v)=>upd(id,'parcela',v));
+}
+
+// ── DELETE ──
+function askDel(id){const c=DB.find(x=>x._id===id);document.getElementById('CFS').textContent=`Excluir "${c?.nome}"? Ação irreversível.`;document.getElementById('CFB').onclick=()=>doDel(id);document.getElementById('CO').classList.add('open');}
+function closeCfm(){document.getElementById('CO').classList.remove('open');}
+function doDel(id){DB=DB.filter(c=>c._id!==id);persist();closeCfm();buildFilters();applyFilter();renderStats();toast('Excluído');}
+
+// ═══════════════════════════════════════════════
+// MANAGE OPTIONS — color picker
+// ═══════════════════════════════════════════════
+let EDITING_OPT_COL=null; // col being edited
+let EDITING_OPT_IDX=null; // index in opts array
+let EDITING_TEMP_COLOR=null;
+let ADD_TEMP_COLOR='#7c6af5';
+
+function openManageOpts(){renderOptList();document.getElementById('MOP').classList.add('open');}
+function closeMOP(){closeInlineEditor();document.getElementById('MOP').classList.remove('open');}
+function saveOptsAndClose(){
+  saveOpts('et',ET_OPTS);saveOpts('ac',AC_OPTS);
+  populateEtapaSelect();buildFilters();applyFilter();renderStats();
+  closeMOP();toast('Opções salvas');
+}
+
+function renderOptList(){
+  const col=document.getElementById('OPCOL').value;
+  const opts=getOpts(col);
+  document.getElementById('OPTL').innerHTML=opts.map((o,i)=>`
+    <div class="opt-row" id="OROW_${i}">
+      <div class="opt-dot ${EDITING_OPT_COL===col&&EDITING_OPT_IDX===i?'active':''}" style="background:${o.c}" title="Clique para alterar cor" onclick="openInlineEditor('${col}',${i},'${o.c}')" data-idx="${i}"></div>
+      <span class="opt-name">${esc(o.v)}</span>
+      <button class="opt-del" onclick="delOpt('${col}',${i})" title="Remover">✕</button>
+    </div>
+    ${EDITING_OPT_COL===col&&EDITING_OPT_IDX===i?renderInlineEditor(o.c):''}
+  `).join('');
+  // Restore add color dot
+  document.getElementById('ADOT').style.background=ADD_TEMP_COLOR;
+}
+
+function renderInlineEditor(currentColor){
+  return `<div class="float-color-editor" id="ICE" style="min-width:220px;position:relative;">
+    <div style="font-family:'DM Mono',monospace;font-size:.62rem;color:var(--txm);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;">Cor</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="position:relative;width:36px;height:36px;">
+        <div style="width:36px;height:36px;border-radius:7px;border:2px solid rgba(255,255,255,.15);cursor:pointer;background:${currentColor};" id="ICE_SW" onclick="document.getElementById('INLINE_NCP').click()"></div>
+        <input type="color" id="INLINE_NCP" value="${currentColor}" style="position:absolute;top:0;left:0;opacity:0;width:36px;height:36px;cursor:pointer;" onchange="onNativeColorPick(this.value)">
+      </div>
+      <input type="text" id="ICE_HEX" value="${currentColor}" maxlength="7" placeholder="#rrggbb" style="font-family:'DM Mono',monospace;font-size:.82rem;background:var(--surf2);border:1px solid var(--brd);border-radius:7px;padding:7px 10px;color:var(--tx);width:100px;letter-spacing:.05em;" oninput="onEditHexInput(this.value)">
+    </div>
+    <div style="display:flex;gap:6px;margin-top:10px;">
+      <button class="btn btn-p btn-sm" onclick="confirmEditColor()" style="flex:1;">Salvar</button>
+      <button class="btn btn-g btn-sm" onclick="closeInlineEditor()" style="flex:1;">Cancelar</button>
+    </div>
+  </div>`;
+}
+
+function openInlineEditor(col,idx,currentColor){
+  if(EDITING_OPT_COL===col&&EDITING_OPT_IDX===idx){closeInlineEditor();return;}
+  EDITING_OPT_COL=col;EDITING_OPT_IDX=idx;EDITING_TEMP_COLOR=currentColor;
+  const dotEl=document.querySelector(`.opt-dot[data-idx="${idx}"]`);
+  const fe=document.getElementById('FLOAT_EDITOR');
+  fe.innerHTML=renderInlineEditor(currentColor);
+  fe.style.display='block';
+  // Update swatch color after render
+  setTimeout(()=>{
+    const sw=document.getElementById('ICE_SW');
+    if(sw)sw.style.background=currentColor;
+  },5);
+  if(dotEl){
+    const r=dotEl.getBoundingClientRect();
+    let top=r.bottom+4;
+    let left=r.left;
+    if(top+150>window.innerHeight)top=r.top-150-4;
+    if(left+210>window.innerWidth)left=window.innerWidth-210-8;
+    if(left<8)left=8;
+    fe.style.top=top+'px';
+    fe.style.left=left+'px';
+  }
+  const outside=ev=>{if(!fe.contains(ev.target)){closeInlineEditor();document.removeEventListener('click',outside);};};
+  setTimeout(()=>document.addEventListener('click',outside),10);
+}
+
+function closeInlineEditor(){
+  EDITING_OPT_COL=null;EDITING_OPT_IDX=null;EDITING_TEMP_COLOR=null;
+  const fe=document.getElementById('FLOAT_EDITOR');
+  if(fe)fe.style.display='none';
+  renderOptList();
+}
+
+function onEditHexInput(v){
+  if(/^#[0-9a-fA-F]{6}$/.test(v)){
+    EDITING_TEMP_COLOR=v;
+    const sw=document.getElementById('ICE_SW');if(sw)sw.style.background=v;
+    const ncp=document.getElementById('INLINE_NCP');if(ncp)ncp.value=v;
+  }
+}
+
+// Called from native color picker
+function onNativeColorPick(v){
+  EDITING_TEMP_COLOR=v;
+  const sw=document.getElementById('ICE_SW');if(sw)sw.style.background=v;
+  const hex=document.getElementById('ICE_HEX');if(hex)hex.value=v;
+}
+
+// Legacy alias
+function onNativeColorInput(v){onNativeColorPick(v);}
+
+function confirmEditColor(){
+  if(EDITING_OPT_COL===null||EDITING_OPT_IDX===null)return;
+  const opts=getOpts(EDITING_OPT_COL);
+  opts[EDITING_OPT_IDX].c=EDITING_TEMP_COLOR;
+  setOpts(EDITING_OPT_COL,opts);
+  closeInlineEditor();
+  applyFilter();renderStats();
+  toast('Cor atualizada');
+}
+
+// ── ADD COLOR PICKER ──
+function openAddColorPicker(){
+  const panel=document.getElementById('ACEP');
+  const isOpen=panel.style.display!=='none';
+  panel.style.display=isOpen?'none':'flex';
+  if(!isOpen){
+    document.getElementById('ACES').style.background=ADD_TEMP_COLOR;
+    document.getElementById('ACEH').value=ADD_TEMP_COLOR;
+    document.getElementById('ANCP').value=ADD_TEMP_COLOR;
+  }
+}
+
+function onAddColorInput(v){
+  ADD_TEMP_COLOR=v;
+  document.getElementById('ADOT').style.background=v;
+  document.getElementById('ACES').style.background=v;
+  document.getElementById('ACEH').value=v;
+}
+
+function onAddHexInput(v){
+  if(/^#[0-9a-fA-F]{6}$/.test(v)){
+    ADD_TEMP_COLOR=v;
+    document.getElementById('ANCP').value=v;
+    document.getElementById('ACES').style.background=v;
+    document.getElementById('ADOT').style.background=v;
+  }
+}
+
+function confirmAddColor(){
+  const v=document.getElementById('ACEH').value;
+  if(/^#[0-9a-fA-F]{6}$/.test(v)){ADD_TEMP_COLOR=v;}
+  document.getElementById('ADOT').style.background=ADD_TEMP_COLOR;
+  document.getElementById('ACEP').style.display='none';
+}
+
+function cancelAddColor(){document.getElementById('ACEP').style.display='none';}
+
+function addOpt(){
+  const col=document.getElementById('OPCOL').value;
+  const name=document.getElementById('OPTN').value.trim();
+  if(!name){toast('Digite o nome da opção','err');return;}
+  const opts=getOpts(col);
+  if(opts.find(o=>o.v===name)){toast('Opção já existe','err');return;}
+  opts.push({v:name,c:ADD_TEMP_COLOR});
+  setOpts(col,opts);
+  document.getElementById('OPTN').value='';
+  document.getElementById('ACEP').style.display='none';
+  populateEtapaSelect();buildFilters();renderOptList();applyFilter();
+  toast(`"${name}" adicionado`);
+}
+
+function delOpt(col,i){
+  const opts=getOpts(col);opts.splice(i,1);setOpts(col,opts);
+  if(EDITING_OPT_COL===col&&EDITING_OPT_IDX===i)closeInlineEditor();
+  else renderOptList();
+  populateEtapaSelect();buildFilters();applyFilter();
+}
+
+// ── IMPORT / EXPORT ──
+function doImport(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{try{const wb=XLSX.read(ev.target.result,{type:'binary',cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws,{header:1});let hr=-1;for(let i=0;i<Math.min(rows.length,5);i++){if(rows[i]&&rows[i].some(c=>typeof c==='string'&&c.toUpperCase().includes('NOME'))){hr=i;break;}}if(hr===-1){toast('Cabeçalho não encontrado','err');return;}const hs=rows[hr].map(h=>(h||'').toString().trim().toUpperCase());const ix=k=>hs.findIndex(h=>h.includes(k));const fd=v=>{if(!v)return '';if(v instanceof Date)return v.toISOString().slice(0,19);if(typeof v==='string'&&v.length>=8)return v.slice(0,10);return String(v);};const imp=[];for(let i=hr+1;i<rows.length;i++){const row=rows[i];if(!row||!row[ix('NOME')])continue;imp.push({_id:NID++,nome:String(row[ix('NOME')]||'').trim().replace(/\n/g,''),cpf:String(row[ix('CPF')]||'').trim(),acao:String(row[ix('AÇÃO')]||row[ix('ACAO')]||'').trim(),data:fd(row[ix('DATA')]),etapas:String(row[ix('ETAP')]||'').trim(),atualizacao:fd(row[ix('ATUALIZ')])||now(),dpp_dn:fd(row[ix('DPP')]),trafego_pago:String(row[ix('TRAFEG')]||'').trim(),pendencia:String(row[ix('PEND')]||'').trim(),parcela:String(row[ix('PARCEL')]||'').trim(),obs:String(row[ix('OBS')]||'').trim()});}if(!imp.length){toast('Sem dados','err');return;}DB=imp;persist();buildFilters();applyFilter();renderStats();renderNewRowFixed();toast(`${imp.length} contratos importados`);}catch(err){toast('Erro ao ler arquivo','err');console.error(err);}};
+  r.readAsBinaryString(f);e.target.value='';
+}
+function doXLSX(){const d=DB.map(c=>({'NOME':c.nome,'CPF':c.cpf,'Ação':c.acao,'Data':c.data,'Etapas':c.etapas,'Atualização':c.atualizacao,'DPP ou DN':c.dpp_dn,'Trafego Pago':c.trafego_pago,'Pendencia':c.pendencia,'Parcela':c.parcela,'OBS':c.obs}));const ws=XLSX.utils.json_to_sheet(d);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Contratos');XLSX.writeFile(wb,`Contratos_${new Date().toISOString().slice(0,10)}.xlsx`);toast('XLSX exportado');}
+function doCSV(){const hs=['NOME','CPF','Ação','Data','Etapas','Atualização','DPP ou DN','Trafego Pago','Pendencia','Parcela','OBS'];const rows=DB.map(c=>[c.nome,c.cpf,c.acao,c.data,c.etapas,c.atualizacao,c.dpp_dn,c.trafego_pago,c.pendencia,c.parcela,c.obs].map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(','));const csv=[hs.join(','),...rows].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));a.download=`Contratos_${new Date().toISOString().slice(0,10)}.csv`;a.click();toast('CSV exportado');}
+
+// ── TOAST ──
+function toast(msg,type='ok'){const c=document.getElementById('TOASTS');const t=document.createElement('div');t.className=`toast t-${type}`;t.innerHTML=`<span class="td">${type==='ok'?'✓':'✕'}</span> ${msg}`;c.appendChild(t);setTimeout(()=>t.style.opacity='0',2600);setTimeout(()=>t.remove(),3000);}
+
+// ── KEYBOARD ──
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeM();closeDet();closeCfm();closeObs();closeMOP();closeDrop();}
+  if(e.key==='Enter'&&document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#NR_FIXED')){commitNewRow();}
+});
+
+// ── INIT ──
+(function(){
+  initSB();
+  checkAuth();
+  _stT=null;_stP=false;
+  DB.forEach((c,i)=>{if(c._id===undefined)c._id=i;});
+  NID=DB.reduce((m,c)=>Math.max(m,c._id||0),0)+1;
+  populateEtapaSelect();buildHeader();buildFilters();renderNewRowFixed();
+  // Sort by data ascending on first load (oldest first, newest last)
+  SF='data';SD=1;buildHeader();sortRender();
+  renderStats();
+  // Scroll to bottom after render
+  setTimeout(()=>{
+    const ts=document.getElementById('TS');
+    if(ts)ts.scrollTop=ts.scrollHeight;
+  },120);
+})();
+window.addEventListener('resize',()=>{clearTimeout(window._rzt);window._rzt=setTimeout(()=>{if(document.getElementById('LOGIN_SCREEN')&&document.getElementById('LOGIN_SCREEN').classList.contains('hidden')){buildHeader();}},200);});
+</script>
+</body>
+</html>
