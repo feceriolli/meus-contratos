@@ -90,6 +90,35 @@ tbody tr:hover{background:var(--surf2);}
 tbody tr:last-child{border-bottom:none;}
 td{padding:7px 10px;font-size:.81rem;color:var(--tx);overflow:hidden;}
 
+/* COLUMN WIDTHS — flexible, adapts to any screen */
+th{min-width:0;padding:9px 10px;}
+.c-nome{min-width:200px;}
+.c-cpf{min-width:115px;}
+.c-acao{min-width:140px;}
+.c-data{min-width:85px;}
+.c-etapa{min-width:180px;}
+.c-atu{min-width:135px;}
+.c-dpp{min-width:90px;}
+td:nth-child(8),th:nth-child(8){min-width:100px;} /* TRÁFEGO */
+td:nth-child(9),th:nth-child(9){min-width:100px;} /* PENDÊNCIA */
+td:nth-child(10),th:nth-child(10){min-width:95px;} /* PARCELA */
+.c-obs{max-width:220px;}
+td:last-child,th:last-child{min-width:46px;max-width:56px;}
+
+/* colgroup classes — used for resize */
+.col-nome{max-width:none;}
+.col-cpf{min-width:115px;}
+.col-acao{min-width:140px;}
+.col-data{min-width:85px;}
+.col-etapas{min-width:180px;}
+.col-atualizacao{min-width:135px;}
+.col-dpp_dn{min-width:95px;}
+.col-traffic_pago{min-width:100px;}
+.col-pendencia{min-width:100px;}
+.col-parcela{min-width:95px;}
+.col-obs{min-width:180px;max-width:280px;}
+.col-acts{min-width:46px;max-width:56px;width:52px;}
+
 /* NEW ROW - FIXED ABOVE TABLE */
 .new-row-fixed-wrap{background:var(--surf);border:1px solid var(--brds);border-radius:11px;margin-bottom:10px;padding:6px 0;flex-shrink:0;}
 .new-row-fixed-wrap:hover{background:rgba(124,106,245,.07);}
@@ -645,7 +674,7 @@ let _stT=null,_stP=false;
 
 const COLS=['nome','cpf','acao','data','etapas','atualizacao','dpp_dn','trafego_pago','pendencia','parcela','obs'];
 const HDRS=['NOME','CPF','AÇÃO','DATA','ETAPA','ATUALIZAÇÃO','DPP/DN','TRÁFEGO','PENDÊNCIA','PARCELA','OBS'];
-const DW=[220,130,170,95,230,150,95,100,110,110,230];
+const DW=[0,120,160,90,200,140,95,110,105,105,280,52];
 let CW=JSON.parse(localStorage.getItem('cj_cw5')||'null')||[...DW];
 
 function persist(){
@@ -772,28 +801,29 @@ function clearAll(){
 
 // ── HEADER ──
 function buildHeader(){
-  document.getElementById('CG').innerHTML=COLS.map((_,i)=>`<col>`).join('')+'<col style="width:52px">';
-  document.getElementById('TH').innerHTML='<tr>'+HDRS.map((h,i)=>{const k=COLS[i],ind=SF===k?(SD===1?'↑':'↓'):'';return `<th class="c-${k}" onclick="sortBy('${k}')"><div class="th-in"><span>${h}</span><span class="sind">${ind}</span></div><div class="rh" onclick="event.stopPropagation()" onmousedown="startR(event,${i})"></div></th>`;}).join('')+'<th style="width:52px"></th></tr>';
+  document.getElementById('CG').innerHTML=COLS.map(function(k,i){return '<col class="col-'+k+'">';}).join('')+'<col class="col-acts">';
+  document.getElementById('TH').innerHTML='<tr>'+HDRS.map((h,i)=>{const k=COLS[i],ind=SF===k?(SD==1?'↑':'↓'):'';return `<th class="c-${k}" onclick="sortBy('${k}')"><div class="th-in"><span>${h}</span><span class="sind">${ind}</span></div><div class="rh" onclick="event.stopPropagation()" onmousedown="startR(event,${i})"></div></th>`;}).join('')+'<th class="col-acts"></th></tr>';
 }
 
 // ── RESIZE (drag column border to set width) ──
 let RES=null;
 function startR(e,i){
   e.preventDefault();
-  RES={i,x0:e.clientX,el:e.target};
+  RES={i,x0:e.clientX,el:e.target,sw:getW(COLS[i])};
   const rh=e.target;rh.classList.add('on');
   const mv=ev=>{
     const diff=ev.clientX-RES.x0;
-    const nw=Math.max(50,(CW[i]||100)+diff);
+    const nw=Math.max(50,RES.sw+diff);
     CW[RES.i]=nw;
-    const cols=document.querySelectorAll('#CG col');
-    if(cols[RES.i])cols[RES.i].style.width=nw+'px';
-    const ths=document.querySelectorAll('#TH th');
-    if(ths[RES.i])ths[RES.i].style.width=nw+'px';
+    setW(COLS[RES.i],nw);
+    saveCW();
   };
-  const up=()=>{rh.classList.remove('on');saveCW();document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);RES=null;};
+  const up=()=>{rh.classList.remove('on');document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);RES=null;};
   document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
 }
+function colSel(k){return '.col-'+k;}
+function getW(k){const el=document.querySelector(colSel(k));if(!el)return DW[COLS.indexOf(k)];var w=getComputedStyle(el).width;return parseFloat(w);}
+function setW(k,px){var s=k+'px';document.querySelectorAll(colSel(k)).forEach(function(el){el.style.minWidth=s;el.style.maxWidth=s;});}
 
 // ── FILTERS ──
 function buildFilters(){
@@ -972,7 +1002,7 @@ function renderTable(){
       <td class="c-click" title="Clique para alterar" onclick="openDrop(event,AC_OPTS,'${esc(c.acao)}',(v)=>upd(${c._id},'acao',v))">
         <span class="ehint">✎</span><span class="abadge" style="${acaoStyle(c.acao)}">${esc(c.acao)||'—'}</span></td>
       <td class="c-data">${fmtD(c.data)}</td>
-      <td class="c-click" title="Clique para alterar" onclick="openDrop(event,ET_OPTS,'${esc(c.etapas)}',(v)=>upd(${c._id},'etapas',v,true))">
+      <td class="c-etapa c-click" title="Clique para alterar" onclick="openDrop(event,ET_OPTS,'${esc(c.etapas)}',(v)=>upd(${c._id},'etapas',v,true))">
         <span class="ehint">✎</span><span class="etbdg" style="${etapaStyle(c.etapas)}">${esc(c.etapas)||'—'}</span></td>
       <td class="c-atu"><div class="atu-w"><span class="atu-t">${fmtDT(c.atualizacao)}</span><button class="rfbtn" onclick="event.stopPropagation();upd(${c._id},'atualizacao',now());toast('Atualizado ✓')" title="Registrar agora">↻</button></div></td>
       <td class="c-dpp c-click" onclick="openEditCell(${c._id},'dpp_dn',${JSON.stringify(c.dpp_dn||'').replace(/'/g,"\\'")})">${fmtD(c.dpp_dn)}</td>
@@ -1256,14 +1286,20 @@ function saveNameEdit(){
   const col=document.getElementById('OPCOL').value;
   const opts=getOpts(col);
   const newName=document.getElementById('ONINP').value.trim();
+  const field=col==='ac'?'acao':'etapas';
+  const oldName=opts[EDITING_OPT_NAME_IDX].v;
   if(!newName){toast('Nome não pode ser vazio','err');return;}
   if(opts.find(o=>o.v===newName)&&opts.indexOf(opts.find(o=>o.v===newName))!==EDITING_OPT_NAME_IDX){toast('Já existe uma opção com esse nome','err');return;}
   opts[EDITING_OPT_NAME_IDX].v=newName;
   setOpts(col,opts);
+  // Update all contracts that have the old value
+  var updated=0;
+  DB.forEach(function(c){if(c[field]===oldName){c[field]=newName;updated++;}});
+  if(updated){persist();}
   EDITING_OPT_NAME_IDX=null;
   closeInlineEditor();
-  populateEtapaSelect();buildFilters();applyFilter();
-  toast('Nome atualizado');
+  populateEtapaSelect();buildFilters();applyFilter();renderStats();
+  toast('Nome atualizado em '+updated+' contrato(s)');
 }
 
 function cancelNameEdit(){
