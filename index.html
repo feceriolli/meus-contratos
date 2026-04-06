@@ -252,6 +252,21 @@ th{white-space:nowrap;}
 #fi{display:none;}
 .hidden-native{position:absolute;width:0;height:0;opacity:0;pointer-events:none;}
 
+/* MOBILE */
+@media(max-width:768px){
+  header{padding:0 .8rem;}.logo-text{font-size:.82rem;}.logo-icon{display:none;}.logo-sub{display:none;}
+  .hacts{gap:4px;}.hacts .btn{padding:6px 8px;font-size:.7rem;}.hacts .btn .btn-label{display:none;}
+  .app{margin-top:52px;padding:.8rem;height:calc(100vh - 52px);}
+  .stats{gap:6px;margin-bottom:.8rem;display:grid;grid-template-columns:1fr 1fr;}.sc{min-width:0;}.sc-val{font-size:1.3rem;}.sc-hint{display:none;}
+  .toolbar{gap:6px;margin-bottom:.8rem;}.sw{min-width:100%;order:1;}.fsel{order:2;flex:1;min-width:0;padding:7px 10px;font-size:.7rem;}
+  table{min-width:900px;}
+  .tbl-scroll{min-height:100px;}
+  .new-row-fixed-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .tbl-top{padding:8px 12px;}.tbl-title{font-size:.65rem;}
+  td{padding:5px 7px;font-size:.75rem;}
+  .login-box{margin:0 16px;padding:24px 20px;}
+}
+
 /* LOGIN */
 .login-screen{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;}
 .login-screen.hidden{display:none;}
@@ -271,11 +286,30 @@ th{white-space:nowrap;}
     <div class="login-title">CONTRATOS</div>
     <div class="login-sub">GESTÃO JURÍDICA</div>
     <div class="login-err" id="LOGIN_ERR">Login ou senha incorretos</div>
-    <label class="login-label">Usuário</label>
-    <input class="fi" style="margin-bottom:16px" id="LOGIN_USER" placeholder="Digite seu usuário" onkeydown="if(event.key==='Enter')doLogin()">
-    <label class="login-label">Senha</label>
-    <input class="fi" type="password" id="LOGIN_PASS" placeholder="Digite sua senha" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:20px" onclick="doLogin()">Entrar</button>
+    <!-- LOGIN FORM -->
+    <div id="LOGIN_FORM">
+      <label class="login-label">Login</label>
+      <input class="fi" style="margin-bottom:16px" id="LOGIN_USER" placeholder="Digite seu login" onkeydown="if(event.key==='Enter')doLogin()">
+      <label class="login-label">Senha</label>
+      <input class="fi" type="password" id="LOGIN_PASS" placeholder="Digite sua senha" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:20px" onclick="doLogin()">Entrar</button>
+      <div style="text-align:center;margin-top:16px;font-size:.78rem;color:var(--txm)">
+        Não tem conta? <a href="#" onclick="event.preventDefault();showReg()" style="color:var(--acc);text-decoration:none">Criar conta</a>
+      </div>
+    </div>
+    <!-- REGISTER FORM -->
+    <div id="REG_FORM" style="display:none">
+      <label class="login-label">Login</label>
+      <input class="fi" id="REG_USER" placeholder="Escolha um login" onkeydown="if(event.key==='Enter')doReg()">
+      <label class="login-label">Senha</label>
+      <input class="fi" type="password" id="REG_PASS" placeholder="Crie uma senha" onkeydown="if(event.key==='Enter')doReg()">
+      <label class="login-label">Confirmar Senha</label>
+      <input class="fi" type="password" id="REG_PASS2" placeholder="Confirme a senha" onkeydown="if(event.key==='Enter')doReg()">
+      <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:20px" onclick="doReg()">Criar Conta</button>
+      <div style="text-align:center;margin-top:16px;font-size:.78rem;color:var(--txm)">
+        Já tem conta? <a href="#" onclick="event.preventDefault();showLogin()" style="color:var(--acc);text-decoration:none">Voltar ao login</a>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -498,6 +532,45 @@ function checkAuth(){
     document.getElementById('LOGIN_SCREEN').classList.add('hidden');
   }
   document.getElementById('LOGIN_USER').focus();
+}
+
+function showReg(){
+  document.getElementById('LOGIN_FORM').style.display='none';
+  document.getElementById('REG_FORM').style.display='block';
+  document.getElementById('LOGIN_ERR').style.display='none';
+  document.getElementById('REG_USER').focus();
+}
+
+function showLogin(){
+  document.getElementById('REG_FORM').style.display='none';
+  document.getElementById('LOGIN_FORM').style.display='block';
+  document.getElementById('LOGIN_ERR').style.display='none';
+  document.getElementById('LOGIN_USER').focus();
+}
+
+async function doReg(){
+  var u=document.getElementById('REG_USER').value.trim();
+  var p=document.getElementById('REG_PASS').value;
+  var p2=document.getElementById('REG_PASS2').value;
+  var errEl=document.getElementById('LOGIN_ERR');
+  if(!u||!p||!p2){errEl.textContent='Preencha todos os campos';errEl.style.display='block';return;}
+  if(p!==p2){errEl.textContent='As senhas não conferem';errEl.style.display='block';return;}
+  if(p.length<6){errEl.textContent='A senha deve ter pelo menos 6 caracteres';errEl.style.display='block';return;}
+  errEl.style.display='none';
+  try{
+    var result=await sb.auth.signUp({email:normEmail(u),password:p});
+    if(result.error)throw result.error;
+    errEl.style.color='var(--ok)';
+    errEl.textContent='Conta criada! Agora faça login.';
+    errEl.style.display='block';
+    document.getElementById('REG_PASS').value='';
+    document.getElementById('REG_PASS2').value='';
+    setTimeout(showLogin,1500);
+  }catch(e){
+    errEl.style.color='#ef4444';
+    errEl.textContent='Erro: '+e.message;
+    errEl.style.display='block';
+  }
 }
 
 // ═══════════════════════════════════════════════
