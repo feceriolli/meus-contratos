@@ -90,39 +90,10 @@ tbody tr:hover{background:var(--surf2);}
 tbody tr:last-child{border-bottom:none;}
 td{padding:7px 10px;font-size:.81rem;color:var(--tx);overflow:hidden;}
 
-/* COLUMN WIDTHS — flexible, adapts to any screen */
-th{min-width:0;padding:9px 10px;}
-.c-nome{min-width:200px;}
-.c-cpf{min-width:115px;}
-.c-acao{min-width:140px;}
-.c-data{min-width:85px;}
-.c-etapa{min-width:180px;}
-.c-atu{min-width:135px;}
-.c-dpp{min-width:90px;}
-td:nth-child(8),th:nth-child(8){min-width:120px;} /* TRÁFEGO */
-td:nth-child(9),th:nth-child(9){min-width:100px;} /* PENDÊNCIA */
-td:nth-child(10),th:nth-child(10){min-width:95px;} /* PARCELA */
-.c-obs{max-width:220px;}
-td:last-child,th:last-child{min-width:46px;max-width:56px;}
-
-/* colgroup classes — used for resize */
-.col-nome{max-width:none;}
-.col-cpf{min-width:115px;}
-.col-acao{min-width:140px;}
-.col-data{min-width:85px;}
-.col-etapas{min-width:180px;}
-.col-atualizacao{min-width:135px;}
-.col-dpp_dn{min-width:95px;}
-.col-trafego_pago{min-width:120px;}
-.col-pendencia{min-width:100px;}
-.col-parcela{min-width:95px;}
-.col-obs{min-width:180px;max-width:280px;}
-.col-acts{min-width:46px;max-width:56px;width:52px;}
-
 /* NEW ROW - FIXED ABOVE TABLE */
-.new-row-fixed-wrap{background:var(--surf);border:1px solid var(--brds);border-radius:11px;margin-bottom:10px;padding:6px 0;flex-shrink:0;}
+.new-row-fixed-wrap{background:var(--surf);border:1px solid var(--brds);border-radius:11px;margin-bottom:10px;padding:6px 0;flex-shrink:0;overflow-x:auto;}
 .new-row-fixed-wrap:hover{background:rgba(124,106,245,.07);}
-.new-row-fixed-wrap table{width:100%;table-layout:auto;}
+.new-row-fixed-wrap table{border-collapse:collapse;min-width:900px;}
 .new-row-fixed-wrap td{padding:6px 10px;vertical-align:middle;}
 .new-row-fixed-wrap .new-inp{width:100%;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--tx);font-family:'Syne',sans-serif;font-size:.8rem;padding:3px 4px;border-radius:4px;transition:border-color .15s,background .15s;box-sizing:border-box;}
 .new-row-fixed-wrap .new-inp:focus{outline:none;border-bottom-color:var(--acc);background:rgba(124,106,245,.08);}
@@ -674,7 +645,8 @@ let _stT=null,_stP=false;
 
 const COLS=['nome','cpf','acao','data','etapas','atualizacao','dpp_dn','trafego_pago','pendencia','parcela','obs'];
 const HDRS=['NOME','CPF','AÇÃO','DATA','ETAPA','ATUALIZAÇÃO','DPP/DN','TRÁFEGO','PENDÊNCIA','PARCELA','OBS'];
-const DW=[0,120,160,90,200,140,95,110,105,105,280,52];
+const DW=[140,120,160,90,200,140,95,110,105,105,280];
+let CW=JSON.parse(localStorage.getItem('cj_cw5')||'null')||[...DW];
 let CW=JSON.parse(localStorage.getItem('cj_cw5')||'null')||[...DW];
 
 function persist(){
@@ -801,29 +773,38 @@ function clearAll(){
 
 // ── HEADER ──
 function buildHeader(){
-  document.getElementById('CG').innerHTML=COLS.map(function(k,i){return '<col class="col-'+k+'">';}).join('')+'<col class="col-acts">';
-  document.getElementById('TH').innerHTML='<tr>'+HDRS.map((h,i)=>{const k=COLS[i],ind=SF===k?(SD==1?'↑':'↓'):'';return `<th class="c-${k}" onclick="sortBy('${k}')"><div class="th-in"><span>${h}</span><span class="sind">${ind}</span></div><div class="rh" onclick="event.stopPropagation()" onmousedown="startR(event,${i})"></div></th>`;}).join('')+'<th class="col-acts"></th></tr>';
+  var colsHTML='';
+  COLS.forEach(function(k,i){
+    var w=CW[i];
+    colsHTML+='<col style="width:'+w+'px">';
+  });
+  colsHTML+='<col style="width:52px">';
+  document.getElementById('CG').innerHTML=colsHTML;
+  document.getElementById('TH').innerHTML='<tr>'+HDRS.map((h,i)=>{const k=COLS[i],ind=SF===k?(SD==1?'↑':'↓'):'';return `<th class="c-${k}" onclick="sortBy('${k}')"><div class="th-in"><span>${h}</span><span class="sind">${ind}</span></div><div class="rh" onclick="event.stopPropagation()" onmousedown="startR(event,${i})"></div></th>`;}).join('')+'<th style="width:52px"></th></tr>';
 }
 
 // ── RESIZE (drag column border to set width) ──
 let RES=null;
 function startR(e,i){
   e.preventDefault();
-  RES={i,x0:e.clientX,el:e.target,sw:getW(COLS[i])};
+  RES={i,x0:e.clientX,el:e.target};
   const rh=e.target;rh.classList.add('on');
   const mv=ev=>{
     const diff=ev.clientX-RES.x0;
-    const nw=Math.max(50,RES.sw+diff);
+    const nw=Math.max(50,(CW[RES.i]||150)+diff);
     CW[RES.i]=nw;
-    setW(COLS[RES.i],nw);
-    saveCW();
+    // Update both tables
+    var allCols=document.querySelectorAll('#CG col');
+    var nrCols=document.querySelectorAll('#NR_FIXED col');
+    [allCols,nrCols].forEach(function(cols){
+      if(cols.length>i)cols[i].style.width=nw+'px';
+    });
+    var ths=document.querySelectorAll('#TH th');
+    if(ths[i])ths[i].style.width=nw+'px';
   };
-  const up=()=>{rh.classList.remove('on');document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);RES=null;};
+  const up=()=>{rh.classList.remove('on');saveCW();document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);RES=null;};
   document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
 }
-function colSel(k){return '.col-'+k;}
-function getW(k){const el=document.querySelector(colSel(k));if(!el)return DW[COLS.indexOf(k)];var w=getComputedStyle(el).width;return parseFloat(w);}
-function setW(k,px){var s=k+'px';document.querySelectorAll(colSel(k)).forEach(function(el){el.style.minWidth=s;el.style.maxWidth=s;});}
 
 // ── FILTERS ──
 function buildFilters(){
@@ -920,7 +901,12 @@ function buildNewRowFixed(){
   const acOpts=['JUDICIAL','BENEFICIO POR INCAPACIDADE','EXECUÇÃO','SALARIO MATERNIDADE','BPC LOAS','TRABALHISTA','ALIMENTOS','SALARIO MATERNIDADE PRORROG','REGULAMENTAÇÃO DE VISITAS'];
   const showParcela=NR.etapas==='Recebendo Parcelas';
   const parcelOpts=['Recebeu Parcela 1','Recebeu Parcela 2','Recebeu Parcela 3','Recebeu Parcela 4','Recebeu Parcela 5','Recebeu Parcela 6'];
-  return `<table style="table-layout:fixed;width:100%;"><colgroup>${CW.map(w=>`<col style="width:${w}px">`).join('')}<col style="width:66px"></colgroup><tr>
+  // Build colgroup matching main table
+  var colHTML=COLS.map(function(k,i){
+    var w=CW[i];
+    return '<col style="width:'+w+'px">';
+  }).join('')+'<col style="width:52px">';
+  return `<table style="table-layout:auto;width:max-content;"><colgroup>${colHTML}</colgroup><tr>
     <td><input class="new-inp" placeholder="Nome..." value="${esc(NR.nome)}" oninput="NR.nome=this.value" id="NR_nome"></td>
     <td><input class="new-inp" placeholder="CPF..." value="${esc(NR.cpf)}" oninput="NR.cpf=this.value;onCPFInput(this)" style="font-family:'DM Mono',monospace;font-size:.73rem"></td>
     <td>${nrSel(acOpts,'acao','Ação...')}</td>
