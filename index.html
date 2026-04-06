@@ -647,7 +647,7 @@ const COLS=['nome','cpf','acao','data','etapas','atualizacao','dpp_dn','trafego_
 const HDRS=['NOME','CPF','AÇÃO','DATA','ETAPA','ATUALIZAÇÃO','DPP/DN','TRÁFEGO','PENDÊNCIA','PARCELA','OBS'];
 const DW=[140,120,160,90,200,140,95,110,105,105,280];
 let CW=JSON.parse(localStorage.getItem('cj_cw5')||'null')||[...DW];
-let CW=JSON.parse(localStorage.getItem('cj_cw5')||'null')||[...DW];
+if(CW.length!==DW.length)CW=[...DW];
 
 function persist(){
   localStorage.setItem('cj_v5',JSON.stringify(DB));
