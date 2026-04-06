@@ -71,11 +71,9 @@ header{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(10,10,12,
 .tbl-top{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-bottom:1px solid var(--brds);background:var(--surf);flex-shrink:0;}
 .tbl-title{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--txm);letter-spacing:.08em;text-transform:uppercase;}
 .tbl-cnt{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--txd);}
-.tbl-scroll{overflow:auto;flex:1;position:relative;}
+.tbl-scroll{overflow-x:auto;overflow-y:auto;flex:1;position:relative;}
 
-table{width:100%;border-collapse:collapse;table-layout:auto;}
-.new-row-wrap{flex-shrink:0;overflow-x:auto;}
-.new-row-wrap table{width:100%;table-layout:fixed;}
+#TBL,.new-row-fixed-wrap table{border-collapse:collapse;table-layout:fixed;}
 
 thead th{font-family:'DM Mono',monospace;font-size:.63rem;font-weight:500;color:var(--txd);letter-spacing:.1em;text-transform:uppercase;padding:9px 10px;text-align:left;border-bottom:1px solid var(--brds);background:var(--surf);cursor:pointer;user-select:none;white-space:nowrap;position:sticky;top:0;z-index:5;overflow:hidden;transition:color .2s;}
 thead th:hover{color:var(--acc2);}
@@ -93,7 +91,7 @@ td{padding:7px 10px;font-size:.81rem;color:var(--tx);overflow:hidden;}
 /* NEW ROW - FIXED ABOVE TABLE */
 .new-row-fixed-wrap{background:var(--surf);border:1px solid var(--brds);border-radius:11px;margin-bottom:10px;padding:6px 0;flex-shrink:0;overflow-x:auto;}
 .new-row-fixed-wrap:hover{background:rgba(124,106,245,.07);}
-.new-row-fixed-wrap table{border-collapse:collapse;min-width:900px;}
+.new-row-fixed-wrap table{width:100%;border-collapse:collapse;table-layout:fixed;}
 .new-row-fixed-wrap td{padding:6px 10px;vertical-align:middle;}
 .new-row-fixed-wrap .new-inp{width:100%;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--tx);font-family:'Syne',sans-serif;font-size:.8rem;padding:3px 4px;border-radius:4px;transition:border-color .15s,background .15s;box-sizing:border-box;}
 .new-row-fixed-wrap .new-inp:focus{outline:none;border-bottom-color:var(--acc);background:rgba(124,106,245,.08);}
@@ -358,7 +356,7 @@ th{white-space:nowrap;}
       <span class="tbl-cnt" id="TC"></span>
     </div>
     <div class="tbl-scroll" id="TS">
-      <table id="TBL">
+      <table id="TBL" style="table-layout:fixed;">
         <colgroup id="CG"></colgroup>
         <thead id="TH"></thead>
         <tbody id="TB"></tbody>
@@ -773,14 +771,19 @@ function clearAll(){
 
 // ── HEADER ──
 function buildHeader(){
+  var total=0;
   var colsHTML='';
   COLS.forEach(function(k,i){
-    var w=CW[i];
-    colsHTML+='<col style="width:'+w+'px">';
+    colsHTML+='<col style="width:'+CW[i]+'px">';
+    total+=CW[i];
   });
   colsHTML+='<col style="width:52px">';
+  total+=52;
   document.getElementById('CG').innerHTML=colsHTML;
   document.getElementById('TH').innerHTML='<tr>'+HDRS.map((h,i)=>{const k=COLS[i],ind=SF===k?(SD==1?'↑':'↓'):'';return `<th class="c-${k}" onclick="sortBy('${k}')"><div class="th-in"><span>${h}</span><span class="sind">${ind}</span></div><div class="rh" onclick="event.stopPropagation()" onmousedown="startR(event,${i})"></div></th>`;}).join('')+'<th style="width:52px"></th></tr>';
+  // Force table to fixed pixel width so columns don't stretch
+  var tbl=document.getElementById('TBL');
+  if(tbl){tbl.style.width=total+'px';tbl.style.minWidth=total+'px';}
 }
 
 // ── RESIZE (drag column border to set width) ──
@@ -902,11 +905,8 @@ function buildNewRowFixed(){
   const showParcela=NR.etapas==='Recebendo Parcelas';
   const parcelOpts=['Recebeu Parcela 1','Recebeu Parcela 2','Recebeu Parcela 3','Recebeu Parcela 4','Recebeu Parcela 5','Recebeu Parcela 6'];
   // Build colgroup matching main table
-  var colHTML=COLS.map(function(k,i){
-    var w=CW[i];
-    return '<col style="width:'+w+'px">';
-  }).join('')+'<col style="width:52px">';
-  return `<table style="table-layout:auto;width:max-content;"><colgroup>${colHTML}</colgroup><tr>
+  var colHTML=COLS.map(function(k,i){return '<col style="width:'+CW[i]+'px">';}).join('')+'<col style="width:52px">';
+  return `<table><colgroup>${colHTML}</colgroup><tr>
     <td><input class="new-inp" placeholder="Nome..." value="${esc(NR.nome)}" oninput="NR.nome=this.value" id="NR_nome"></td>
     <td><input class="new-inp" placeholder="CPF..." value="${esc(NR.cpf)}" oninput="NR.cpf=this.value;onCPFInput(this)" style="font-family:'DM Mono',monospace;font-size:.73rem"></td>
     <td>${nrSel(acOpts,'acao','Ação...')}</td>
