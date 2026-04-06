@@ -205,6 +205,8 @@ th{white-space:nowrap;}
 .opt-dot:hover{transform:scale(1.12);box-shadow:0 0 0 2px var(--acc);}
 .opt-dot.active{box-shadow:0 0 0 2px var(--acc);}
 .opt-name{flex:1;font-size:.82rem;color:var(--tx);}
+.opt-ed{background:none;border:none;cursor:pointer;color:var(--txd);font-size:.85rem;padding:3px 5px;border-radius:4px;transition:all .14s;}
+.opt-ed:hover{color:var(--acc2);background:rgba(124,106,245,.1);}
 .opt-del{background:none;border:none;cursor:pointer;color:var(--txd);font-size:.85rem;padding:3px 5px;border-radius:4px;transition:all .14s;}
 .opt-del:hover{color:#ef4444;background:rgba(239,68,68,.1);}
 .add-opt-row{display:flex;gap:8px;align-items:center;}
@@ -1074,6 +1076,7 @@ function doDel(id){DB=DB.filter(c=>c._id!==id);persist();closeCfm();buildFilters
 let EDITING_OPT_COL=null; // col being edited
 let EDITING_OPT_IDX=null; // index in opts array
 let EDITING_TEMP_COLOR=null;
+let EDITING_OPT_NAME_IDX=null; // editing name inline
 let ADD_TEMP_COLOR='#7c6af5';
 
 function openManageOpts(){renderOptList();document.getElementById('MOP').classList.add('open');}
@@ -1090,7 +1093,9 @@ function renderOptList(){
   document.getElementById('OPTL').innerHTML=opts.map((o,i)=>`
     <div class="opt-row" id="OROW_${i}">
       <div class="opt-dot ${EDITING_OPT_COL===col&&EDITING_OPT_IDX===i?'active':''}" style="background:${o.c}" title="Clique para alterar cor" onclick="openInlineEditor('${col}',${i},'${o.c}')" data-idx="${i}"></div>
-      <span class="opt-name">${esc(o.v)}</span>
+      <span class="opt-name" id="ONM_${i}" style="${EDITING_OPT_NAME_IDX===i?'display:none':''}" ondblclick="openNameEdit(${i},'${o.v}')">${esc(o.v)}</span>
+      ${EDITING_OPT_NAME_IDX===i?renderNameEditor(o.v):''}
+      <button class="opt-ed" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--txd);font-size:.78rem;padding:3px 5px;border-radius:4px;transition:all .14s;" onclick="openNameEdit(${i},'${o.v}')" title="Editar nome">✏️</button>
       <button class="opt-del" onclick="delOpt('${col}',${i})" title="Remover">✕</button>
     </div>
     ${EDITING_OPT_COL===col&&EDITING_OPT_IDX===i?renderInlineEditor(o.c):''}
@@ -1233,6 +1238,37 @@ function delOpt(col,i){
   if(EDITING_OPT_COL===col&&EDITING_OPT_IDX===i)closeInlineEditor();
   else renderOptList();
   populateEtapaSelect();buildFilters();applyFilter();
+}
+
+// ── INLINE NAME EDIT ──
+function renderNameEditor(currentName){
+  return `<input id="ONINP" style="flex:1;background:var(--surf3);border:1px solid var(--acc);border-radius:7px;padding:6px 10px;color:var(--tx);font-family:'Syne',sans-serif;font-size:.82rem;" value="${esc(currentName)}" onkeydown="if(event.key==='Enter')saveNameEdit();if(event.key==='Escape')cancelNameEdit()">
+  <button class="btn btn-p btn-sm" onclick="saveNameEdit()">OK</button>`;
+}
+
+function openNameEdit(i,curName){
+  EDITING_OPT_NAME_IDX=i;
+  renderOptList();
+  setTimeout(()=>{const inp=document.getElementById('ONINP');if(inp){inp.focus();inp.select();}},10);
+}
+
+function saveNameEdit(){
+  const col=document.getElementById('OPCOL').value;
+  const opts=getOpts(col);
+  const newName=document.getElementById('ONINP').value.trim();
+  if(!newName){toast('Nome não pode ser vazio','err');return;}
+  if(opts.find(o=>o.v===newName)&&opts.indexOf(opts.find(o=>o.v===newName))!==EDITING_OPT_NAME_IDX){toast('Já existe uma opção com esse nome','err');return;}
+  opts[EDITING_OPT_NAME_IDX].v=newName;
+  setOpts(col,opts);
+  EDITING_OPT_NAME_IDX=null;
+  closeInlineEditor();
+  populateEtapaSelect();buildFilters();applyFilter();
+  toast('Nome atualizado');
+}
+
+function cancelNameEdit(){
+  EDITING_OPT_NAME_IDX=null;
+  renderOptList();
 }
 
 // ── IMPORT / EXPORT ──
